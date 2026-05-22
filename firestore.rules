@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == 'sonfrom@gmail.com' || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    // --- Post Validation ---
+    function isValidPost(data) {
+      return data.keys().hasAll(['title', 'content', 'authorName', 'authorId', 'createdAt', 'updatedAt']) &&
+             data.keys().size() == 6 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 10000 &&
+             data.authorName is string && data.authorName.size() <= 100 &&
+             data.authorId is string && data.authorId == request.auth.uid &&
+             data.createdAt is timestamp &&
+             data.updatedAt == request.time;
+    }
+
+    // --- Notice Validation ---
+    function isValidNotice(data) {
+      return data.keys().hasAll(['title', 'content', 'authorName', 'authorId', 'priority', 'createdAt', 'updatedAt']) &&
+             data.keys().size() == 7 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 10000 &&
+             data.authorName is string && data.authorName.size() <= 100 &&
+             data.authorId is string && data.authorId == request.auth.uid &&
+             data.priority is bool &&
+             data.createdAt is timestamp &&
+             data.updatedAt == request.time;
+    }
+
+    // --- Video Validation ---
+    function isValidVideo(data) {
+      return data.keys().hasAll(['title', 'description', 'youtubeUrl', 'thumbnail', 'authorName', 'authorId', 'createdAt', 'updatedAt']) &&
+             data.keys().size() == 8 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.description is string && data.description.size() <= 5000 &&
+             data.youtubeUrl is string && data.youtubeUrl.size() <= 500 &&
+             (data.thumbnail == null || (data.thumbnail is string && data.thumbnail.size() <= 1000)) &&
+             data.authorName is string && data.authorName.size() <= 100 &&
+             data.authorId is string && data.authorId == request.auth.uid &&
+             data.createdAt is timestamp &&
+             data.updatedAt == request.time;
+    }
+
+    match /posts/{postId} {
+      allow get: if isValidId(postId);
+      allow list: if true; 
+
+      allow create: if isSignedIn() && isValidId(postId) && 
+                      incoming().createdAt == request.time &&
+                      isValidPost(incoming());
+      
+      allow update: if isSignedIn() && isValidId(postId) && 
+                      incoming().authorId == existing().authorId &&
+                      incoming().createdAt == existing().createdAt &&
+                      isValidPost(incoming()) && (
+                        (request.auth.uid == existing().authorId && 
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'updatedAt']))
+                      );
+                      
+      allow delete: if isSignedIn() && isValidId(postId) && request.auth.uid == existing().authorId;
+    }
+
+    match /notices/{noticeId} {
+      allow get: if isValidId(noticeId);
+      allow list: if true;
+
+      allow create: if isAdmin() && isValidId(noticeId) && 
+                      incoming().createdAt == request.time &&
+                      isValidNotice(incoming());
+      
+      allow update: if isAdmin() && isValidId(noticeId) && 
+                      incoming().authorId == existing().authorId &&
+                      incoming().createdAt == existing().createdAt &&
+                      isValidNotice(incoming()) && (
+                        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'priority', 'updatedAt'])
+                      );
+                      
+      allow delete: if isAdmin() && isValidId(noticeId);
+    }
+
+    match /videos/{videoId} {
+      allow get: if isValidId(videoId);
+      allow list: if true;
+
+      allow create: if isAdmin() && isValidId(videoId) && 
+                      incoming().createdAt == request.time &&
+                      isValidVideo(incoming());
+      
+      allow update: if isAdmin() && isValidId(videoId) && 
+                      incoming().authorId == existing().authorId &&
+                      incoming().createdAt == existing().createdAt &&
+                      isValidVideo(incoming()) && (
+                        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'youtubeUrl', 'thumbnail', 'updatedAt'])
+                      );
+                      
+      allow delete: if isAdmin() && isValidId(videoId);
+    }
+  }
+}

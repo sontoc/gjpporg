@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Post Validation ---
+    function isValidPost(data) {
+      return data.keys().hasAll(['title', 'content', 'authorName', 'authorId', 'createdAt', 'updatedAt']) &&
+             data.keys().size() == 6 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 10000 &&
+             data.authorName is string && data.authorName.size() <= 100 &&
+             data.authorId is string && data.authorId == request.auth.uid &&
+             data.createdAt == request.time &&
+             data.updatedAt == request.time;
+    }
+
+    match /posts/{postId} {
+      // 3. Path Variable Hardening
+      allow get: if isValidId(postId);
+      // 8. Secure List Queries
+      allow list: if true; // Public list allowed as per requirements (read-only public)
+
+      allow create: if isSignedIn() && isValidId(postId) && isValidPost(incoming());
+      
+      allow update: if isSignedIn() && isValidId(postId) && 
+                      incoming().authorId == existing().authorId &&
+                      incoming().createdAt == existing().createdAt &&
+                      isValidPost(incoming()) && (
+                        // Author update
+                        (request.auth.uid == existing().authorId && 
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'updatedAt']))
+                      );
+                      
+      allow delete: if isSignedIn() && isValidId(postId) && request.auth.uid == existing().authorId;
+    }
+  }
+}
