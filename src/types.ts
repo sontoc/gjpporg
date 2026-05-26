@@ -8,6 +8,8 @@ export interface Post {
   imageUrl?: string;
   url?: string;
   author: string;
+  source?: string;
+  youtubeUrl?: string;
 }
 
 export interface SiteSettings {

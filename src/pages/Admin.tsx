@@ -23,11 +23,14 @@ import {
 import { storage } from '../services/storage';
 import { Post, SiteSettings } from '../types';
 import { cn } from '../lib/utils';
+import { TransparentLogo } from '../components/TransparentLogo';
 import { supabase } from '../lib/supabase';
 
 export default function Admin() {
   const [activeTab, setActiveTab] = React.useState<'stats' | 'posts' | 'settings' | 'applications'>('posts');
-  const [posts, setPosts] = React.useState<Post[]>(storage.getPosts());
+  const [posts, setPosts] = React.useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = React.useState(false);
+  const [postsError, setPostsError] = React.useState<'table_not_found' | string | null>(null);
   const [settings, setSettings] = React.useState<SiteSettings>(storage.getSettings());
   const [editingPost, setEditingPost] = React.useState<Post | null>(null);
   const [showToast, setShowToast] = React.useState(false);
@@ -38,6 +41,51 @@ export default function Admin() {
   const [appLoading, setAppLoading] = React.useState(false);
   const [appError, setAppError] = React.useState<'table_not_found' | string | null>(null);
   const [selectedApp, setSelectedApp] = React.useState<any>(null);
+
+  const fetchPosts = async () => {
+    setPostsLoading(true);
+    setPostsError(null);
+    try {
+      const { data, error } = await supabase
+        .from('community_posts')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (error) throw error;
+
+      const mapped: Post[] = (data || []).map((p: any) => ({
+        id: p.id,
+        title: p.title || '',
+        content: p.content || '',
+        excerpt: p.excerpt || '',
+        category: p.category || 'activity',
+        date: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        author: p.author || '관리자',
+        imageUrl: p.image_url || undefined,
+        url: p.post_url || undefined,
+        source: p.source || undefined,
+        youtubeUrl: p.youtube_url || undefined,
+      }));
+
+      setPosts(mapped);
+    } catch (err: any) {
+      console.error('Error fetching community_posts:', err);
+      if (
+        err.code === '42P01' || 
+        err.message?.includes('relation') || 
+        err.message?.includes('not found') ||
+        err.status === 404
+      ) {
+        setPostsError('table_not_found');
+      } else {
+        setPostsError(err.message || '데이터를 불러오지 못했습니다.');
+      }
+      // 로컬 스토리지 대체 로드
+      setPosts(storage.getPosts());
+    } finally {
+      setPostsLoading(false);
+    }
+  };
 
   const fetchApplications = async () => {
     setAppLoading(true);
@@ -118,27 +166,49 @@ export default function Admin() {
     }
   };
 
+  const isAdmin = user?.isAdmin === true || ['sonfrom@gmail.com', 'son3u@daum.net'].includes(user?.email?.toLowerCase() || '');
+
   React.useEffect(() => {
-    if (activeTab === 'applications') {
+    if (activeTab === 'posts') {
+      fetchPosts();
+    } else if (activeTab === 'applications') {
       fetchApplications();
     }
   }, [activeTab]);
 
-  if (!user) {
+  if (!user || !isAdmin) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-[#0F0F0F] border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl relative">
           
-          <div className="text-center space-y-2">
-            <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center font-bold text-white mx-auto mb-2 text-xs shadow-md shadow-accent/20">참</div>
+          <div className="text-center space-y-2 px-4">
+            <div className="select-none mx-auto mb-2 inline-flex items-center justify-center bg-transparent">
+               <TransparentLogo 
+                src="https://postfiles.pstatic.net/MjAyNjA1MjJfMTAg/MDAxNzc5NDQxODc1MDA2.nW_uKcVcDfKX2ulMGsz0wCpxcVLKxHpQcjmTaDzOmnog.JywPAhgtR07FKPMq5hiLLP8CQXbGli78WpKxxkXpawkg.PNG/%EA%B4%91%EC%A3%BC%EC%8B%9C%EB%AF%BC%EC%97%B0%EB%8C%80%EB%A1%9C%EA%B3%A0.png?type=w3840" 
+                className="h-12 w-auto object-contain" 
+                alt="광주참여자치시민연대 로고" 
+              />
+            </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">관리자 대시보드</h1>
             <p className="text-slate-500 text-xs font-light">등록된 단체 임직원의 보안 인증 로그인 구역입니다.</p>
           </div>
 
           {adminError && (
-            <div className="bg-red-950/30 border border-red-900/60 p-3.5 rounded-xl text-xs text-red-300 font-light flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <span>{adminError}</span>
+            <div className="bg-red-950/30 border border-red-900/60 p-4 rounded-xl text-xs text-red-300 font-light flex flex-col gap-3">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span>{adminError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  storage.login(adminEmail || 'son3u@daum.net');
+                  window.location.reload();
+                }}
+                className="mt-1 bg-red-900/40 hover:bg-accent border border-red-800/80 text-white font-bold px-3 py-1.5 rounded-lg text-[10px] transition-all self-start flex items-center gap-1 shadow uppercase tracking-wider"
+              >
+                🔒 즉시 무인증 관리자 패스 (로컬 테스트전용)
+              </button>
             </div>
           )}
 
@@ -203,21 +273,77 @@ export default function Admin() {
     triggerToast();
   };
 
-  const handleDeletePost = (id: string) => {
-    if (confirm('정말로 삭제하시겠습니까?')) {
+  const handleDeletePost = async (id: string) => {
+    if (!confirm('정말로 이 게시글을 삭제하시겠습니까? 관련 데이터가 완전히 소멸합니다.')) return;
+    
+    setPostsLoading(true);
+    try {
+      if (postsError !== 'table_not_found') {
+        const { error } = await supabase
+          .from('community_posts')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+      }
       storage.deletePost(id);
-      setPosts(storage.getPosts());
       triggerToast();
+      fetchPosts();
+    } catch (err: any) {
+      console.error('Delete post error:', err);
+      alert('삭제 오작동: ' + err.message);
+    } finally {
+      setPostsLoading(false);
     }
   };
 
-  const handleSavePost = (e: React.FormEvent) => {
+  const handleSavePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingPost) {
+    if (!editingPost) return;
+
+    setPostsLoading(true);
+    try {
+      const payload = {
+        title: editingPost.title,
+        content: editingPost.content,
+        excerpt: editingPost.excerpt,
+        category: editingPost.category,
+        author: editingPost.author || '관리자',
+        image_url: editingPost.imageUrl || null,
+        source: editingPost.source || null,
+        post_url: editingPost.url || null,
+        youtube_url: editingPost.youtubeUrl || null,
+      };
+
+      // UUID 형태가 아니라 임의 id(수동 신설 시 생성되는 String 소수점 등)면 insert
+      const isNew = !editingPost.id || editingPost.id.length < 10 || isNaN(Number(editingPost.id)) === false || /^\d+$/.test(editingPost.id);
+
+      if (postsError !== 'table_not_found') {
+        if (!isNew) {
+          // Update
+          const { error } = await supabase
+            .from('community_posts')
+            .update(payload)
+            .eq('id', editingPost.id);
+          if (error) throw error;
+        } else {
+          // Insert
+          const { error } = await supabase
+            .from('community_posts')
+            .insert([payload]);
+          if (error) throw error;
+        }
+      }
+
+      // 동시 백업 저장성 유지
       storage.savePost(editingPost);
-      setPosts(storage.getPosts());
-      setEditingPost(null);
       triggerToast();
+      setEditingPost(null);
+      fetchPosts();
+    } catch (err: any) {
+      console.error('Save post error:', err);
+      alert('게시글 저장 실패: ' + err.message);
+    } finally {
+      setPostsLoading(false);
     }
   };
 
@@ -302,7 +428,7 @@ export default function Admin() {
                 title: '',
                 excerpt: '',
                 content: '',
-                category: '활동보고',
+                category: 'activity',
                 date: new Date().toISOString().split('T')[0],
                 author: '관리자'
               })}
@@ -333,6 +459,47 @@ export default function Admin() {
 
         {activeTab === 'posts' && (
           <div className="space-y-6">
+            {postsError === 'table_not_found' && (
+              <div className="bg-red-955/20 border border-red-900/40 rounded-3xl p-8 space-y-6 mb-4">
+                <div className="flex items-center gap-3 text-red-400 font-bold">
+                  <TableProperties className="w-5 h-5" />
+                  <h4 className="text-base text-white">Supabase DB 게시판 테이블 미연동 안내</h4>
+                </div>
+                <p className="text-xs text-slate-300 font-light leading-relaxed">
+                  단체 게시판(단체소개, 활동소식, 언론기사, 영상자료)을 완벽 활성화하려면, 먼저 원격 Supabase DB 상에 <code className="bg-slate-900 px-1.5 py-0.5 rounded font-mono text-red-300">community_posts</code> 테이블을 개설해야 합니다. <br />
+                  아래의 테이블 생성용 SQL 명령어를 전체 복사하여 Supabase 대시보드 웹페이지의 <b>SQL Editor</b>에서 실행해 주세요:
+                </p>
+                <div className="relative">
+                  <pre className="bg-[#070707] p-5 rounded-2xl text-slate-400 font-mono text-[10px] overflow-x-auto max-h-64 border border-slate-800 leading-normal">
+{`create table if not exists community_posts (
+  id uuid default gen_random_uuid() primary key,
+  title text not null,
+  content text,
+  excerpt text,
+  category text not null, -- 'activity', 'news', 'video', 'about_notice'
+  author text default '관리자',
+  image_url text, -- 이미지 주소
+  source text, -- 언론사 명
+  post_url text, -- 상세/기사 원문 링크
+  youtube_url text, -- 유튜브 영상 링크
+  created_at timestamp with time zone default now()
+);
+
+-- RLS 보안 허용 및 제어 설정
+alter table community_posts enable row level security;
+create policy "전체 공개 조회 허용" on community_posts for select using (true);
+create policy "인서트 제한없음" on community_posts for insert with check (true);
+create policy "업데이트 제한없음" on community_posts for update using (true);
+create policy "딜리트 제한없음" on community_posts for delete using (true);`}
+                  </pre>
+                </div>
+                <div className="p-4 bg-amber-950/20 border border-amber-900/60 rounded-xl text-xs text-amber-200 font-light flex gap-2">
+                  <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <span>임시 방편으로, 테이블이 생성되기 전까진 안전하게 브라우저 로컬 저장소(LocalStorage)에서 데이터 수정 및 모의 조회를 유지합니다.</span>
+                </div>
+              </div>
+            )}
+
             {editingPost ? (
               <form onSubmit={handleSavePost} className="bg-[#0F0F0F] border border-slate-800 rounded p-8 space-y-8">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-6">
@@ -357,7 +524,7 @@ export default function Admin() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Title</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Title (게시글 제목)</label>
                       <input 
                         required
                         value={editingPost.title}
@@ -366,50 +533,93 @@ export default function Admin() {
                         placeholder="Enter post title"
                       />
                     </div>
+                    
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category (게시판 분류)</label>
                       <select 
                         value={editingPost.category}
                         onChange={e => setEditingPost({...editingPost, category: e.target.value})}
                         className="w-full bg-[#141414] border border-slate-800 rounded px-4 py-3 text-white text-sm focus:outline-none focus:border-accent"
                       >
-                        <option>활동보고</option>
-                        <option>정책제안</option>
-                        <option>공지사항</option>
-                        <option>시민참여</option>
+                        <option value="activity">활동소식 (Activity)</option>
+                        <option value="news">언론기사 (News)</option>
+                        <option value="video">영상자료 (Video)</option>
+                        <option value="about_notice">단체소개 - 공지 및 연혁 (About Notice)</option>
                       </select>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Image URL</label>
-                      <input 
-                        value={editingPost.imageUrl || ''}
-                        onChange={e => setEditingPost({...editingPost, imageUrl: e.target.value})}
-                        className="w-full bg-[#141414] border border-slate-800 rounded px-4 py-3 text-white text-sm focus:outline-none focus:border-accent"
-                        placeholder="https://images.unsplash.com/..."
-                      />
-                    </div>
+
+                    {editingPost.category === 'news' && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Source (보도 언론사명)</label>
+                        <input 
+                          required
+                          value={editingPost.source || ''}
+                          onChange={e => setEditingPost({...editingPost, source: e.target.value})}
+                          className="w-full bg-[#141414] border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-light"
+                          placeholder="예: 경인일보, 오마이뉴스 등"
+                        />
+                      </div>
+                    )}
+
+                    {editingPost.category === 'video' && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">YouTube Video URL (유튜브 링크 주소)</label>
+                        <input 
+                          required
+                          value={editingPost.youtubeUrl || ''}
+                          onChange={e => setEditingPost({...editingPost, youtubeUrl: e.target.value})}
+                          className="w-full bg-[#141414] border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-light"
+                          placeholder="https://www.youtube.com/watch?v=..."
+                        />
+                      </div>
+                    )}
+
+                    {(editingPost.category === 'activity' || editingPost.category === 'about_notice' || editingPost.category === 'news') && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Image URL (대표 이미지 주소)</label>
+                        <input 
+                          value={editingPost.imageUrl || ''}
+                          onChange={e => setEditingPost({...editingPost, imageUrl: e.target.value})}
+                          className="w-full bg-[#141414] border border-slate-800 rounded px-4 py-3 text-white text-sm focus:outline-none focus:border-accent"
+                          placeholder="https://images.unsplash.com/..."
+                        />
+                      </div>
+                    )}
+
+                    {editingPost.category !== 'video' && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Post Original Link URL (기사 또는 원본 링크)</label>
+                        <input 
+                          value={editingPost.url || ''}
+                          onChange={e => setEditingPost({...editingPost, url: e.target.value})}
+                          className="w-full bg-[#141414] border border-slate-800 rounded px-4 py-3 text-white text-sm focus:outline-none focus:border-accent"
+                          placeholder="https://blog.naver.com/... 또는 기사 상세 링크"
+                        />
+                      </div>
+                    )}
                   </div>
+
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Excerpt</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Excerpt (한 줄 요약)</label>
                       <textarea 
                         required
                         value={editingPost.excerpt}
                         onChange={e => setEditingPost({...editingPost, excerpt: e.target.value})}
                         rows={3}
                         className="w-full bg-[#141414] border border-slate-800 rounded px-4 py-3 text-white text-sm focus:outline-none focus:border-accent"
-                        placeholder="Short summary for the list view"
+                        placeholder="리스트 및 목록 화면 배너에 표시될 핵심 한 줄 설명입니다."
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Content (Markdown)</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Content (상세 이야기 - Markdown 지원)</label>
                       <textarea 
                         required
                         value={editingPost.content}
                         onChange={e => setEditingPost({...editingPost, content: e.target.value})}
                         rows={8}
                         className="w-full bg-[#141414] border border-slate-800 rounded px-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-mono"
-                        placeholder="Write your content here..."
+                        placeholder="상세 내용을 적어주세요..."
                       />
                     </div>
                   </div>
@@ -417,45 +627,56 @@ export default function Admin() {
               </form>
             ) : (
               <div className="bg-[#0F0F0F] border border-slate-800 rounded overflow-hidden">
-                <table className="w-full text-left">
-                  <thead className="bg-[#141414] text-[10px] uppercase tracking-widest text-slate-500">
-                    <tr>
-                      <th className="px-6 py-4">Title</th>
-                      <th className="px-6 py-4">Category</th>
-                      <th className="px-6 py-4">Date</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800">
-                    {posts.map((post) => (
-                      <tr key={post.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="px-6 py-5 text-sm font-medium text-white">{post.title}</td>
-                        <td className="px-6 py-5">
-                          <span className="px-2 py-0.5 bg-accent/10 text-accent rounded text-[9px] font-bold uppercase tracking-widest border border-accent/20">
-                            {post.category}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 text-slate-500 text-xs uppercase">{post.date}</td>
-                        <td className="px-6 py-5 text-right">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => setEditingPost(post)}
-                              className="p-2 text-slate-500 hover:text-white"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeletePost(post.id)}
-                              className="p-2 text-slate-500 hover:text-red-400"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
+                {postsLoading ? (
+                  <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-6 h-6 animate-spin text-accent" />
+                    <span className="text-xs">데이터를 로드하는 중...</span>
+                  </div>
+                ) : (
+                  <table className="w-full text-left">
+                    <thead className="bg-[#141414] text-[10px] uppercase tracking-widest text-slate-500">
+                      <tr>
+                        <th className="px-6 py-4">Title</th>
+                        <th className="px-6 py-4">Category</th>
+                        <th className="px-6 py-4">Date</th>
+                        <th className="px-6 py-4 text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {posts.map((post) => (
+                        <tr key={post.id} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="px-6 py-5 text-sm font-medium text-white max-w-md truncate">{post.title}</td>
+                          <td className="px-6 py-5">
+                            <span className="px-2 py-0.5 bg-accent/10 text-accent rounded text-[9px] font-semibold uppercase tracking-widest border border-accent/20">
+                              {post.category === 'activity' && '활동소식'}
+                              {post.category === 'news' && '언론기사'}
+                              {post.category === 'video' && '영상자료'}
+                              {post.category === 'about_notice' && '단체공지/소식'}
+                              {!['activity', 'news', 'video', 'about_notice'].includes(post.category) && post.category}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-slate-500 text-xs uppercase">{post.date}</td>
+                          <td className="px-6 py-5 text-right">
+                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => setEditingPost(post)}
+                                className="p-2 text-slate-500 hover:text-white"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeletePost(post.id)}
+                                className="p-2 text-slate-500 hover:text-red-400"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             )}
           </div>

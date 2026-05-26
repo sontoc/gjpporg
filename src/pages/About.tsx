@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, Shield, Gavel, ArrowLeft, Users, Layers } from 'lucide-react';
+import { FileText, Shield, Gavel, ArrowLeft, Users, Layers, Calendar, MapPin, Copy, Check, Map, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AboutPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'declaration' | 'statutes' | 'rules' | 'executives' | 'organization'>('declaration');
+  const [activeTab, setActiveTab] = useState<'declaration' | 'statutes' | 'rules' | 'executives' | 'organization' | 'history' | 'location'>('declaration');
+  const [copiedAddress, setCopiedAddress] = useState(false);
+  const [activeMap, setActiveMap] = useState<'kakao' | 'google' | 'naver'>('kakao');
+
+  const handleCopyAddress = () => {
+    navigator.clipboard.writeText("경기도 광주시 회안대로 980, 3층");
+    setCopiedAddress(true);
+    setTimeout(() => setCopiedAddress(false), 2000);
+  };
 
   const tabs = [
     { id: 'declaration', name: '창립선언문', icon: <FileText className="w-4 h-4" /> },
@@ -12,10 +20,12 @@ const AboutPage: React.FC = () => {
     { id: 'rules', name: '규칙', icon: <Gavel className="w-4 h-4" /> },
     { id: 'executives', name: '임원소개', icon: <Users className="w-4 h-4" /> },
     { id: 'organization', name: '실행조직', icon: <Layers className="w-4 h-4" /> },
+    { id: 'history', name: '연혁', icon: <Calendar className="w-4 h-4" /> },
+    { id: 'location', name: '오시는길', icon: <MapPin className="w-4 h-4" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] pt-24 pb-20 px-6">
+    <div className="min-h-screen bg-[#0F0F0F] pt-24 pb-20 px-2 sm:px-6">
       <div className="max-w-4xl mx-auto">
         <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-accent mb-8 transition-colors group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -29,16 +39,16 @@ const AboutPage: React.FC = () => {
           </p>
         </header>
 
-        {/* Tab Navigation */}
-        <div className="flex flex-wrap gap-2 mb-12 border-b border-white/5 pb-6">
+        {/* Tab Navigation - Scrollable on mobile, beautiful spacing */}
+        <div className="flex overflow-x-auto md:flex-wrap gap-2 mb-6 border-b border-white/5 pb-4 md:pb-6 scrollbar-none -mx-6 px-6 md:mx-0 md:px-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-full text-xs md:text-sm font-bold transition-all shrink-0 border cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-accent text-white shadow-lg shadow-accent/20'
-                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-700'
+                  ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
+                  : 'bg-slate-800/30 text-slate-400 hover:bg-slate-800 hover:text-white border-slate-800'
               }`}
             >
               {tab.icon}
@@ -47,9 +57,15 @@ const AboutPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Content Area */}
-        <div className="bg-[#141414] border border-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-[120px] rounded-full -mr-32 -mt-32" />
+        {/* Dynamic Abbreviation notice - Beautifully styled with subtle indicator */}
+        <div className="text-slate-400 text-xs sm:text-sm px-2 mb-8 font-light flex items-center gap-2 animate-fade-in">
+          <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse shrink-0" />
+          <span>광주참여자치시민연대는 약칭으로 <strong className="text-accent font-semibold">[광주시민연대]</strong>를 사용합니다.</span>
+        </div>
+
+        {/* Content Area - Frameless transparent on mobile to eliminate cramped boxed feeling */}
+        <div className="bg-transparent md:bg-[#141414] border-0 md:border md:border-slate-800 rounded-3xl p-0 md:p-12 md:shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-[120px] rounded-full -mr-32 -mt-32 hidden md:block" />
           
           <AnimatePresence mode="wait">
             {activeTab === 'declaration' && (
@@ -60,12 +76,12 @@ const AboutPage: React.FC = () => {
                 exit={{ opacity: 0, y: -10 }}
                 className="prose prose-invert max-w-none"
               >
-                <div className="text-center mb-12">
-                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">광주참여자치시민연대 창립선언문</h2>
+                <div className="text-center mb-10">
+                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2">광주참여자치시민연대 창립선언문</h2>
                   <div className="w-12 h-1 bg-accent mx-auto rounded-full" />
                 </div>
                 
-                <div className="text-slate-300 leading-relaxed space-y-6 font-light text-base md:text-lg pl-6 border-l border-white/10 mb-12">
+                <div className="text-slate-300 leading-relaxed space-y-5 font-normal text-xs sm:text-sm md:text-sm px-0 mb-12 text-justify">
                   <p>
                     천년을 면면히 이어온 너른고을 광주는, 해공 신익희로 대한민국과 민주공화국의 기초를 다지고 허난설헌과 일제의 반인륜적 성범죄에 맞서 온몸으로 싸워온 할머니들로 여성인권을 세상에 움트게 한 민주주의와 인권의 고장이다.
                   </p>
@@ -81,7 +97,7 @@ const AboutPage: React.FC = () => {
                   <p>
                     이제, 참 민주주의와 인권의 고장 광주와 광주 시민은 세상에 고한다. 광주의 정신과 시민 행동의 뜻을 이어받아 새 희망을 여는 시민공동체로서 ‘광주참여자치시민연대’를 세상에 출범시켜 광주와 광주 시민이 마땅히 누려야 할 시민주권, 시민자치, 시민연대를 위한 큰 발걸음을 내딛는다.
                   </p>
-                  <p className="font-bold text-white text-xl md:text-2xl pt-4">
+                  <p className="font-bold text-white text-sm sm:text-base pt-4 text-center">
                     오직 시민의 참여로, 시민의 연대로, 시민의 힘으로!
                   </p>
                   <p>
@@ -90,15 +106,15 @@ const AboutPage: React.FC = () => {
                 </div>
 
                 <div className="mt-16 pt-12 border-t border-white/5 text-center">
-                  <p className="text-xl font-bold text-white mb-4">2022. 10. 15.</p>
-                  <p className="text-slate-400 text-lg mb-2">광주참여자치시민연대 창립 발기인 일동</p>
-                  <p className="text-accent font-bold">창립 발기인 53명 대표 구 재 이</p>
+                  <p className="text-lg font-bold text-white mb-4">2022. 10. 15.</p>
+                  <p className="text-slate-400 text-sm mb-2">광주참여자치시민연대 창립 발기인 일동</p>
+                  <p className="text-accent font-bold text-xs sm:text-sm">창립 발기인 53명 대표 구 재 이</p>
                 </div>
 
-                <div className="mt-12 p-8 bg-black/30 rounded-3xl border border-white/5 overflow-hidden relative">
+                <div className="mt-12 p-5 sm:p-8 bg-black/20 sm:bg-black/30 rounded-2xl sm:rounded-3xl border border-white/5 overflow-hidden relative">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-3xl rounded-full" />
                   <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-8 text-center">Founding Members / 창립 발기인</h4>
-                  <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-y-4 gap-x-2 text-[13px] text-slate-400 font-light text-center">
+                  <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-y-4 gap-x-2 text-[12px] sm:text-[13px] text-slate-400 font-light text-center">
                     {["권재형", "김덕임", "김진관", "백영기", "손연국", "이운균", "이종갑", "조연삼", "정인숙", "강수철", "강창성", "강용식", "고영식", "김관양", "김민주", "김보경", "김선명", "김영희", "김진필", "김 현", "남진우", "노신영", "라순하", "박명옥", "박영민", "박형순", "부길만", "백남욱", "손봉호", "신부철", "유권신", "윤정숙", "이근배", "이미정", "이원석", "이응권", "이인숙", "이지희", "이윤섭", "이현오", "이희월", "장 건", "장숙현", "조수아", "정인수", "정준혜", "지재근", "최숭원", "한동윤", "한숙희", "홍민희", "현상순"].map((name, i) => (
                       <span key={i} className="hover:text-accent transition-colors">{name}</span>
                     ))}
@@ -536,12 +552,12 @@ const AboutPage: React.FC = () => {
 
                 <div className="flex justify-center mt-8">
                   <a 
-                    href="https://blog.naver.com/gjct21/222909615013" 
+                    href="https://cafe.naver.com/gjpp2022" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-accent text-sm hover:underline flex items-center gap-2"
                   >
-                    원문 출처 보기 (Naver Blog) <Shield className="w-4 h-4" />
+                    원문 출처 보기 (Naver Cafe) <Shield className="w-4 h-4" />
                   </a>
                 </div>
               </motion.div>
@@ -887,13 +903,293 @@ const AboutPage: React.FC = () => {
 
                 <div className="flex justify-center mt-8">
                   <a 
-                    href="https://blog.naver.com/gjct21/222924735028" 
+                    href="https://cafe.naver.com/gjpp2022" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-accent text-sm hover:underline flex items-center gap-2"
                   >
-                    원문 출처 보기 (Naver Blog) <Gavel className="w-4 h-4" />
+                    원문 출처 보기 (Naver Cafe) <Gavel className="w-4 h-4" />
                   </a>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'history' && (
+              <motion.div
+                key="history"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-12"
+              >
+                <div className="text-center mb-10">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">단체 연혁</h2>
+                  <div className="w-12 h-1 bg-accent mx-auto rounded-full" />
+                  <p className="text-slate-500 text-xs font-light mt-3">
+                    시민의 주권과 참여자치를 가치로 삼고 걸어온 광주참여자치시민연대의 역사입니다.
+                  </p>
+                </div>
+
+                <div className="relative border-l border-slate-800 ml-4 md:ml-32 py-2 space-y-10">
+                  {[
+                    {
+                      year: "2026",
+                      events: [
+                        { date: "03월", title: "아동 복지 행정 지체 개혁 촉구 및 아동권리보장원 관련 성명 발표" },
+                        { date: "01월", title: "제4회 광주시민연대 생태걷기 행사 성료" }
+                      ]
+                    },
+                    {
+                      year: "2025",
+                      events: [
+                        { date: "12월", title: "위례~삼동선 복선전철 기재부 예타 통과 및 조기 착공 촉구 공동 결의" },
+                        { date: "11월", title: "독립 환경다큐 <종이 울리는 순간> 특별상영회 및 GV 대시민 문화행사 성료" },
+                        { date: "09월", title: "상수도 재정 투명 집행 및 광주시 물 행정 총체적 재정비 촉구 성명 발표" },
+                        { date: "08월", title: "평화의 소녀상 건립 기념 및 윤미향 전의원 초청 '시민과 평화' 토크콘서트 개최" },
+                        { date: "06월", title: "광주시민연대 고문단과 시민·회원 합동 대토론 차담회 개최" },
+                        { date: "02월", title: "헌정 수호와 정의 실천을 위한 경기광주시민촛불 광장 행동 동정" }
+                      ]
+                    },
+                    {
+                      year: "2024",
+                      events: [
+                        { date: "11월", title: "수도요금 대폭 인상 철회 요구 범시민 가두 2차 서명운동 지속 전개" },
+                        { date: "11월", title: "창립 2주년 기념 '시민다방' 행사 및 후원의 밤 사랑방 개최" },
+                        { date: "10월", title: "경기도 광주시 수도요금 기습 인상 조례 유예 촉구 연대 시민 집회 및 서명" },
+                        { date: "06월", title: "지방의회 투명성 감시를 위한 광주시의회 정례회 정식 의정모니터링 평가 및 보고서 배포" },
+                        { date: "05월", title: "참다운 소통을 위한 시민 합동 '독립다큐영화 시사회' 및 간담회 개최" },
+                        { date: "03월", title: "제22대 총선 정치개혁 후보 초청 토론회 추진 및 대시민 공약가이드 제공" }
+                      ]
+                    },
+                    {
+                      year: "2023",
+                      events: [
+                        { date: "12월", title: "시의회 수도요금 인상안 심의 보류 및 재검토 유도 공식 성과" },
+                        { date: "11월", title: "경기 광주시 기습 수도요금 인상 계획 즉각 철회 요구 성명 및 반대 집회 주도" },
+                        { date: "10월", title: "광주 시민사회 합동 '수도요금 대폭 인상 철회' 범시민 서명 운동 전개" },
+                        { date: "09월", title: "도심 빌라촌 주민생활 주거환경 개선 및 자치참여 확대 현장 활동 전개" },
+                        { date: "08월", title: '“광주는 시민이 주인인가” 행정 관료주의 권위 혁파 촉구 성명서 발표' },
+                        { date: "07월", title: "시청 스피드게이트 출입통제 시스템 강행 반대 규탄 및 투명 행정 요구 투쟁" }
+                      ]
+                    },
+                    {
+                      year: "2022",
+                      events: [
+                        { date: "12월", title: "(사)한국농아인협회 경기도협회 광주시지회 사랑의 이웃돕기 성금 전달" },
+                        { date: "12월", title: "창립 이후 최초 시의회 정례회 정식 의정모니터링 무정파 완수 및 공표" },
+                        { date: "11월", title: "예산 검시 및 행정 투명성 보장 차원의 광주시 핵심 도시 개발 사업 정보공개 청구" },
+                        { date: "11월 02일", title: "본회 회칙 및 실행 자치 운영에 관한 규칙 공식 제정" },
+                        { date: "10월 18일", title: "경향신문 외 다수 언론에 경기 광주 첫 시민주도 무정파 시민단체 출범 일자 대대적 보도" },
+                        { date: "10월 15일", title: "광주참여자치시민연대(약칭 광주시민연대) 역사적 창립 정식 총회 성료 (창립 발기인 53인, 대표 구재이)" },
+                        { date: "10월 12일", title: "참자치 교두보 마련과 예산 감시 전문화를 위한 단체 설립 선포" }
+                      ]
+                    }
+                  ].map((group, groupIdx) => (
+                    <div key={groupIdx} className="relative">
+                      {/* Year bubble on the left desktop, top on mobile */}
+                      <div className="absolute -left-4 md:-left-32 top-0 flex items-center md:justify-end w-24 md:w-28 text-left md:text-right">
+                        <span className="text-xl md:text-2xl font-black text-accent font-sans md:pr-4">{group.year}</span>
+                      </div>
+
+                      {/* Timeline dot */}
+                      <div className="absolute -left-[6px] top-2.5 w-3 h-3 bg-accent rounded-full border border-slate-950 shadow-lg shadow-accent/40" />
+
+                      <div className="pl-6 md:pl-8 space-y-4 pt-1">
+                        {group.events.map((event, eventIdx) => (
+                          <div key={eventIdx} className="group/item">
+                            <span className="inline-block text-[10px] md:text-xs font-bold text-slate-500 bg-slate-900 border border-slate-850 px-2 py-0.5 rounded-full mb-1">
+                              {event.date}
+                            </span>
+                            <p className="text-slate-300 group-hover/item:text-white text-sm md:text-base font-light transition-colors duration-200">
+                              {event.title}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'location' && (
+              <motion.div
+                key="location"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-8"
+              >
+                <div className="text-center mb-10">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">오시는 길</h2>
+                  <div className="w-12 h-1 bg-accent mx-auto rounded-full" />
+                  <p className="text-slate-500 text-xs font-light mt-3">
+                    광주참여자치시민연대 찾아주시는 길과 대중교통 이용 안내입니다.
+                  </p>
+                </div>
+
+                {/* Main Info */}
+                <div className="bg-slate-900/30 border border-slate-800/80 rounded-2xl p-6 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-accent">Office Location</span>
+                    <h4 className="text-lg font-bold text-white">사무국 주소</h4>
+                    <p className="text-slate-400 font-light text-sm">
+                      경기도 광주시 회안대로 980, 3층 (송정동)
+                    </p>
+                  </div>
+                  <button 
+                    onClick={handleCopyAddress}
+                    className="bg-slate-800 hover:bg-slate-750 border border-slate-705 hover:border-slate-600 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                  >
+                    {copiedAddress ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedAddress ? '주소 복사 완료!' : '주소 전체 복사'}</span>
+                  </button>
+                </div>
+
+                {/* Maps Integration */}
+                <div className="space-y-4">
+                  {/* Dynamic Map Platform Selector */}
+                  <div className="flex bg-slate-900/60 p-1 rounded-xl border border-slate-800/80 self-start max-w-sm">
+                    <button 
+                      onClick={() => setActiveMap('kakao')}
+                      className={`flex-1 py-2 px-4 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeMap === 'kakao' ? 'bg-[#FFE812] text-[#3D2005] shadow' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      카카오맵
+                    </button>
+                    <button 
+                      onClick={() => setActiveMap('naver')}
+                      className={`flex-1 py-2 px-4 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeMap === 'naver' ? 'bg-[#03C75A] text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      네이버 지도
+                    </button>
+                    <button 
+                      onClick={() => setActiveMap('google')}
+                      className={`flex-1 py-2 px-4 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeMap === 'google' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      구글 지도
+                    </button>
+                  </div>
+
+                  <div className="h-[280px] sm:h-[350px] md:h-[400px] w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl relative bg-slate-950">
+                    {activeMap === 'google' ? (
+                      <iframe 
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent('경기도 광주시 회안대로 980')}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
+                        width="100%" 
+                        height="100%" 
+                        style={{ border: 0 }} 
+                        allowFullScreen 
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    ) : activeMap === 'kakao' ? (
+                      <div className="w-full h-full flex flex-col justify-between p-6 md:p-8 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white relative">
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-[#FFE812]/5 blur-[120px] rounded-full -mr-20 -mt-20" />
+                        
+                        <div className="space-y-4 relative z-10">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-[#FFE812] text-[#3D2005] text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md">Kakao Map</span>
+                            <span className="text-slate-500 text-xs">| 실시간 길찾기 & 최신 정보</span>
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">광주참여자치시민연대</h3>
+                            <p className="text-slate-400 font-light text-xs md:text-sm">경기도 광주시 회안대로 980 (송정동 980), 3층</p>
+                          </div>
+                          
+                          <div className="pt-2 flex flex-col sm:flex-row gap-y-1 gap-x-6 text-xs text-slate-400">
+                            <div>• <strong className="text-slate-300 font-semibold">경기광주역</strong>에서 시청방면 버스 (10분)</div>
+                            <div>• <strong className="text-slate-300 font-semibold">밀목.광주시청삼거리</strong> 정류장 도보 2분</div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 relative z-10">
+                          <p className="text-[11px] text-slate-500 font-light leading-relaxed">
+                            ※ 카카오맵은 브라우저 보안 규제에 따른 오류 발생을 방지하기 위해, 원클릭 모바일 앱 또는 공식 전용 지도로 이동하여 실시간 최적 대중교통 경로를 즉시 검색해줍니다.
+                          </p>
+                          <a 
+                            href={`https://map.kakao.com/?q=${encodeURIComponent('경기도 광주시 회안대로 980')}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="bg-[#FFE812] text-[#3D2005] hover:brightness-105 active:scale-[0.99] px-6 py-3.5 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/5 cursor-pointer"
+                          >
+                            <Map className="w-4 h-4 shrink-0" />
+                            <span>카카오맵에서 빠른 길찾기 실행</span>
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex flex-col justify-between p-6 md:p-8 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white relative">
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-[#03C75A]/5 blur-[120px] rounded-full -mr-20 -mt-20" />
+                        
+                        <div className="space-y-4 relative z-10">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-[#03C75A] text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md">Naver Map</span>
+                            <span className="text-slate-500 text-xs">| 고해상도 위성뷰 & 상세 자차 내비 지원</span>
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">광주참여자치시민연대</h3>
+                            <p className="text-slate-400 font-light text-xs md:text-sm">경기도 광주시 회안대로 980 (송정동 980), 3층</p>
+                          </div>
+                          
+                          <div className="pt-2 flex flex-col sm:flex-row gap-y-1 gap-x-6 text-xs text-slate-400">
+                            <div>• <strong className="text-slate-300 font-semibold">내비게이션</strong> '회안대로 980' 또는 '송정동 980' 검색</div>
+                            <div>• 건물 뒤편 주차 공간 이용 가능</div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 relative z-10">
+                          <p className="text-[11px] text-slate-500 font-light leading-relaxed">
+                            ※ 네이버지도 앱 또는 공식 사이트를 통해 선명한 로드뷰 사진과 상세 도보 전용 네비게이션을 이용하실 수 있습니다.
+                          </p>
+                          <a 
+                            href={`https://map.naver.com/v5/search/${encodeURIComponent('경기도 광주시 회안대로 980')}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="bg-[#03C75A] text-white hover:brightness-105 active:scale-[0.99] px-6 py-3.5 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/5 cursor-pointer"
+                          >
+                            <ExternalLink className="w-4 h-4 shrink-0" />
+                            <span>네이버 지도로 빠른 길찾기 실행</span>
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Public Transportation Guides */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                  <div className="bg-slate-900/10 p-6 rounded-2xl border border-white/5 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <h4 className="font-bold text-white text-sm">대중교통 (버스)</h4>
+                    </div>
+                    <div className="text-slate-400 text-xs font-light space-y-2 leading-relaxed">
+                      <p>
+                        <strong className="text-slate-300 font-medium">[밀목.광주시청삼거리] 정류장 하차</strong> (도보 2분)
+                      </p>
+                      <p>• 간선/일반 버스: 32, 320, 660, 31-3, 33-2</p>
+                      <p>• 광역 버스: 1113-1, 1113-2, 500-1</p>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900/10 p-6 rounded-2xl border border-white/5 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-400">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <h4 className="font-bold text-white text-sm">지하철 연계 및 자차</h4>
+                    </div>
+                    <div className="text-slate-400 text-xs font-light space-y-2 leading-relaxed">
+                      <p>
+                        <strong className="text-slate-300 font-medium">• 경강선 경기광주역 이용 시:</strong><br />
+                        경기광주역에서 버스로 환승하여 약 10분 소요 (시청 방면 버스 탑승)
+                      </p>
+                      <p>
+                        <strong className="text-slate-300 font-medium">• 자가용 이용 시:</strong><br />
+                        도로명 주소 '회안대로 980' 검색, 건물 뒤편 주차 공간 이용 가능
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}

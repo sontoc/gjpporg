@@ -1,131 +1,94 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { 
   Play, 
-  Plus, 
   Search, 
   Calendar, 
-  User, 
-  X, 
-  Upload,
   Loader2,
   ArrowLeft,
   Youtube,
-  Trash2,
-  ExternalLink
+  ExternalLink,
+  Settings,
+  Plus,
+  PenTool
 } from 'lucide-react';
-import { 
-  collection, 
-  query, 
-  orderBy, 
-  onSnapshot, 
-  addDoc, 
-  deleteDoc,
-  doc,
-  serverTimestamp
-} from 'firebase/firestore';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { db, auth } from '../lib/firebase';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
-
-interface VideoPost {
-  id: string;
-  title: string;
-  description: string;
-  youtubeUrl: string;
-  thumbnail: string | null;
-  authorName: string;
-  authorId: string;
-  createdAt: any;
-}
+import { supabase } from '../lib/supabase';
+import { storage } from '../services/storage';
+import { Post } from '../types';
+import { DEFAULT_VIDEOS } from '../constants';
 
 const VideoBoard: React.FC = () => {
-  const [videos, setVideos] = useState<VideoPost[]>([]);
+  const [videos, setVideos] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newVideo, setNewVideo] = useState({ title: '', description: '', youtubeUrl: '' });
-  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const isAdmin = user?.email === 'sonfrom@gmail.com';
+  const user = storage.getUser();
+  const isAdmin = user?.isAdmin === true || ['sonfrom@gmail.com', 'son3u@daum.net'].includes(user?.email?.toLowerCase() || '');
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
+    const fetchVideoPosts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('community_posts')
+          .select('*')
+          .eq('category', 'video')
+          .order('id', { ascending: false });
 
-    const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
-    const unsubscribeVideos = onSnapshot(q, (snapshot) => {
-      const videosData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as VideoPost[];
-      setVideos(videosData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching videos:", error);
-      setLoading(false);
-    });
+        if (error) throw error;
 
-    return () => {
-      unsubscribeAuth();
-      unsubscribeVideos();
+        // Separate channel and normal videos to maintain channel at index 0
+        const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
+        const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
+
+        if (data && data.length > 0) {
+          const mapped: Post[] = data.map((p: any) => ({
+            id: p.id,
+            title: p.title || '',
+            content: p.content || '',
+            excerpt: p.excerpt || '',
+            category: 'video',
+            date: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            author: p.author || '관리자',
+            imageUrl: p.image_url || undefined,
+            youtubeUrl: p.youtube_url || p.post_url || ''
+          }));
+
+          // Exclude channel if there are any duplicate IDs
+          const dbVideos = mapped.filter(v => v.id !== "v-channel");
+          const sortedOthers = [...dbVideos, ...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          const merged = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
+          setVideos(merged);
+        } else {
+          const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          const sorted = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
+          setVideos(sorted);
+        }
+      } catch (err) {
+        console.error('Error fetching video posts from Supabase:', err);
+        const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
+        const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
+        const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const sorted = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
+        setVideos(sorted);
+      } finally {
+        setLoading(false);
+      }
     };
+
+    fetchVideoPosts();
   }, []);
 
   const getYoutubeId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|live\/)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isAdmin || !newVideo.title || !newVideo.youtubeUrl) return;
-
-    const videoId = getYoutubeId(newVideo.youtubeUrl);
-    if (!videoId) {
-      alert("올바른 유튜브 URL을 입력해주세요.");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      await addDoc(collection(db, 'videos'), {
-        title: newVideo.title,
-        description: newVideo.description,
-        youtubeUrl: newVideo.youtubeUrl,
-        thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-        authorName: user?.displayName || 'Admin',
-        authorId: user?.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      setNewVideo({ title: '', description: '', youtubeUrl: '' });
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error adding video:", error);
-      alert("영상 등록에 실패했습니다.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!isAdmin || !window.confirm("정말 이 영상을 삭제하시겠습니까?")) return;
-    try {
-      await deleteDoc(doc(db, 'videos', id));
-    } catch (error) {
-      console.error("Error deleting video:", error);
-    }
-  };
-
   const filteredVideos = videos.filter(video => 
     video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    video.description.toLowerCase().includes(searchTerm.toLowerCase())
+    video.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    video.content.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -144,13 +107,13 @@ const VideoBoard: React.FC = () => {
               </div>
               <h1 className="text-4xl font-bold text-white tracking-tight">영상자료실</h1>
             </div>
-            <p className="text-slate-400 text-lg font-light max-w-xl">
-              광주참여자치시민연대의 활동 모습과 <br />
-              다양한 교육 및 강연 영상을 한곳에 모았습니다.
+            <p className="text-slate-400 text-lg font-light max-w-xl leading-relaxed">
+              광주시민연대의 생생한 활동 모습과 <br />
+              다양한 교육, 문화 및 특별 강연 영상을 한곳에 수집했습니다.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <input 
@@ -158,17 +121,17 @@ const VideoBoard: React.FC = () => {
                 placeholder="영상 검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-slate-900/50 border border-slate-800 rounded-full py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-accent/50 w-full md:w-64"
+                className="bg-slate-900/50 border border-slate-800 rounded-full py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-accent/50 w-full md:w-64"
               />
             </div>
             {isAdmin && (
-              <button 
-                onClick={() => setIsModalOpen(true)}
-                className="bg-accent text-white px-6 py-2 rounded-full font-bold text-sm flex items-center gap-2 hover:brightness-110 transition-all shadow-lg shadow-accent/20 shrink-0"
+              <Link 
+                to="/admin"
+                className="bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-white px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0 shadow-lg shadow-accent/5 cursor-pointer font-sans"
               >
-                <Plus className="w-4 h-4" />
-                영상 등록
-              </button>
+                <PenTool className="w-3.5 h-3.5" />
+                <span>영상 업로드</span>
+              </Link>
             )}
           </div>
         </header>
@@ -176,57 +139,72 @@ const VideoBoard: React.FC = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <Loader2 className="w-8 h-8 text-accent animate-spin" />
-            <p className="text-slate-500 text-sm font-light">영상 자료를 불러오는 중...</p>
+            <p className="text-slate-500 text-sm font-light">영상 자료를 가져옵니다...</p>
           </div>
         ) : filteredVideos.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredVideos.map((video, idx) => {
-              const vId = getYoutubeId(video.youtubeUrl);
+              const vId = getYoutubeId(video.youtubeUrl || '');
+              const isChannel = video.id === 'v-channel';
               return (
                 <motion.div
                   key={video.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  className="bg-[#141414] border border-slate-800 rounded-3xl overflow-hidden group hover:border-accent/30 transition-all"
+                  className={`border overflow-hidden group transition-all flex flex-col h-full rounded-3xl ${
+                    isChannel 
+                      ? "bg-accent/5 border-accent/20 hover:border-accent/40 shadow-lg shadow-accent/5" 
+                      : "bg-[#141414] border-slate-800 hover:border-accent/30"
+                  }`}
                 >
                   <div className="relative aspect-video bg-black overflow-hidden">
                     <img 
-                      src={video.thumbnail || `https://img.youtube.com/vi/${vId}/hqdefault.jpg`} 
+                      src={video.imageUrl || (vId ? `https://img.youtube.com/vi/${vId}/hqdefault.jpg` : "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=1000&auto=format&fit=crop")} 
                       alt={video.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
+                      referrerPolicy="no-referrer"
                     />
-                    <a 
-                      href={video.youtubeUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30">
-                        <Play className="w-8 h-8 fill-current" />
-                      </div>
-                    </a>
+                    {video.youtubeUrl && (
+                      <a 
+                        href={video.youtubeUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30">
+                          <Play className="w-8 h-8 fill-current text-white" />
+                        </div>
+                      </a>
+                    )}
                   </div>
-                  <div className="p-6">
-                    <div className="flex justify-between items-start gap-4 mb-4">
-                      <h3 className="text-lg font-bold text-white leading-tight group-hover:text-accent transition-colors">
+                  <div className="p-6 flex-1 flex flex-col justify-between">
+                    <div>
+                      {isChannel && (
+                        <div className="mb-2 text-accent text-[9px] font-bold tracking-widest uppercase flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                          공식 미디어 채널
+                        </div>
+                      )}
+                      <h3 className="text-base font-bold text-white leading-snug group-hover:text-accent transition-colors mb-3 line-clamp-2">
                         {video.title}
                       </h3>
-                      {isAdmin && (
-                        <button 
-                          onClick={() => handleDelete(video.id)}
-                          className="text-slate-600 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <p className="text-slate-400 text-xs font-light mb-6 line-clamp-2 leading-relaxed">
+                        {video.excerpt || video.content}
+                      </p>
                     </div>
-                    <p className="text-slate-500 text-sm font-light mb-6 line-clamp-2 leading-relaxed">
-                      {video.description}
-                    </p>
-                    <div className="flex items-center justify-between pt-4 border-t border-white/5 font-bold text-[10px] uppercase tracking-widest text-slate-600">
-                      <span className="flex items-center gap-1.5"><Youtube className="w-3 h-3" /> YouTube</span>
-                      <span>{video.createdAt ? format(video.createdAt.toDate(), 'yyyy.MM.dd', { locale: ko }) : ''}</span>
+                    <div className="flex items-center justify-between pt-4 border-t border-white/5 font-bold text-[9px] uppercase tracking-widest text-slate-500">
+                      {isChannel ? (
+                        <>
+                          <span className="flex items-center gap-1.5 text-accent font-extrabold"><Youtube className="w-3.5 h-3.5 text-red-500 animate-pulse" /> OFFICIAL CHANNEL</span>
+                          <span className="text-accent hover:text-white transition-colors cursor-pointer underline decoration-dotted">채널가서 구독</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex items-center gap-1.5"><Youtube className="w-3.5 h-3.5 text-red-500" /> YouTube Record</span>
+                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {video.date}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -234,87 +212,12 @@ const VideoBoard: React.FC = () => {
             })}
           </div>
         ) : (
-          <div className="text-center py-32 border border-dashed border-slate-800 rounded-3xl bg-slate-900/10">
+          <div className="text-center py-32 border border-slate-800 rounded-3xl bg-slate-900/10">
             <Play className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-            <p className="text-slate-500 font-light">등록된 영상이 없습니다.</p>
+            <p className="text-slate-500 font-light text-sm">등록된 영상 리스트가 비어 있거나 필터링 결과가 없습니다.</p>
           </div>
         )}
       </div>
-
-      {/* Write Modal - Only for Admins */}
-      <AnimatePresence>
-        {isModalOpen && isAdmin && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-[#141414] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl"
-            >
-              <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">새 영상 등록</h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white transition-colors">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">영상 제목</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={newVideo.title}
-                    onChange={(e) => setNewVideo({ ...newVideo, title: e.target.value })}
-                    placeholder="영상 제목을 입력하세요"
-                    className="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-accent/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">유튜브 URL</label>
-                  <div className="relative">
-                    <Youtube className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
-                    <input 
-                      required
-                      type="url" 
-                      value={newVideo.youtubeUrl}
-                      onChange={(e) => setNewVideo({ ...newVideo, youtubeUrl: e.target.value })}
-                      placeholder="https://www.youtube.com/watch?v=..."
-                      className="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-accent/50"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">설명</label>
-                  <textarea 
-                    rows={4}
-                    value={newVideo.description}
-                    onChange={(e) => setNewVideo({ ...newVideo, description: e.target.value })}
-                    placeholder="영상에 대한 설명을 입력하세요"
-                    className="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-accent/50 resize-none"
-                  />
-                </div>
-                <div className="flex justify-end pt-4">
-                  <button 
-                    disabled={submitting}
-                    type="submit"
-                    className="bg-accent text-white px-8 py-3 rounded-full font-bold flex items-center gap-2 hover:brightness-110 transition-all disabled:opacity-50"
-                  >
-                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                    영상 등록하기
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

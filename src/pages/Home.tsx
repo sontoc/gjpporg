@@ -1,11 +1,143 @@
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Calendar, User, Tag, ChevronRight, ExternalLink, MessageSquare, Send, Play, Youtube } from 'lucide-react';
+import { ArrowRight, Calendar, User, Tag, ChevronRight, ExternalLink, MessageSquare, Send, Play, Youtube, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { storage } from '../services/storage';
+import { supabase } from '../lib/supabase';
+import { Post } from '../types';
+import { DEFAULT_VIDEOS } from '../constants';
 
 export default function Home() {
   const settings = storage.getSettings();
-  const posts = storage.getPosts().slice(0, 3);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [news, setNews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+
+  const getYoutubeId = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|live\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const getArticleUrl = (newsItem: { url: string; title: string }) => {
+    if (!newsItem.url || newsItem.url === '#' || newsItem.url.includes('kocus.com')) {
+      // kocus.com article indices recycle over time. Searching the title on Naver is the most accurate way to present the correct press coverage.
+      return `https://search.naver.com/search.naver?query=${encodeURIComponent(newsItem.title)}`;
+    }
+    return newsItem.url;
+  };
+
+  useEffect(() => {
+    const loadHomeData = async () => {
+      try {
+        // 1. Fetch activities
+        const { data: actData, error: actErr } = await supabase
+          .from('community_posts')
+          .select('*')
+          .eq('category', 'activity')
+          .order('id', { ascending: false })
+          .limit(3);
+
+        if (actErr) throw actErr;
+
+        let dbMapped: Post[] = [];
+        if (actData && actData.length > 0) {
+          dbMapped = actData.map((p: any) => ({
+            id: p.id,
+            title: p.title || '',
+            content: p.content || '',
+            excerpt: p.excerpt || '',
+            category: '활동소식',
+            date: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            author: p.author || '관리자',
+            imageUrl: p.image_url || undefined,
+            url: p.post_url || undefined
+          }));
+        }
+
+        const localActBackup = storage.getPosts();
+        const mergedAct: Post[] = [...dbMapped];
+        for (const lp of localActBackup) {
+          if (mergedAct.length >= 3) break;
+          const isDup = mergedAct.some(m => m.title === lp.title || m.id === lp.id);
+          if (!isDup) {
+            mergedAct.push({ ...lp, category: '활동소식' });
+          }
+        }
+        setPosts(mergedAct);
+
+        // 2. Fetch news
+        const { data: newsData, error: newsErr } = await supabase
+          .from('community_posts')
+          .select('*')
+          .eq('category', 'news')
+          .order('id', { ascending: false })
+          .limit(2);
+
+        const defaultNews = [
+          {
+            id: 'fallback-1',
+            title: "경기 광주시민연대, '광주시 도시개발사업' 보전 및 투명성 촉구 성명",
+            source: "씨티뉴스",
+            date: "2024-03-20",
+            url: "https://cafe.naver.com/gjpp2022"
+          },
+          {
+            id: 'fallback-2',
+            title: "경기도 광주시민연대, '광주시의회 의정비 급격 인상안' 재고 주민 요청",
+            source: "경인일보",
+            date: "2024-02-15",
+            url: "https://cafe.naver.com/gjpp2022"
+          }
+        ];
+
+        if (newsData && newsData.length > 0) {
+          const mappedNews = newsData.map((p: any) => ({
+            id: p.id,
+            title: p.title || '',
+            source: p.source || '참여자치연대',
+            date: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            url: p.post_url || '#'
+          }));
+          setNews([...mappedNews, ...defaultNews].slice(0, 2));
+        } else {
+          setNews(defaultNews);
+        }
+
+      } catch (err) {
+        console.error('Error fetching home data:', err);
+        const localActBackup = storage.getPosts();
+        const mergedAct: Post[] = [];
+        for (const lp of localActBackup) {
+          if (mergedAct.length >= 3) break;
+          mergedAct.push({ ...lp, category: '활동소식' });
+        }
+        setPosts(mergedAct);
+        setNews([
+          {
+            id: 'fallback-1',
+            title: "경기 광주시민연대, '광주시 도시개발사업' 보전 및 투명성 촉구 성명",
+            source: "씨티뉴스",
+            date: "2024-03-20",
+            url: "https://cafe.naver.com/gjpp2022"
+          },
+          {
+            id: 'fallback-2',
+            title: "경기도 광주시민연대, '광주시의회 의정비 급격 인상안' 재고 주민 요청",
+            source: "경인일보",
+            date: "2024-02-15",
+            url: "https://cafe.naver.com/gjpp2022"
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadHomeData();
+  }, []);
 
   return (
     <div className="bg-[#0A0A0A] text-slate-200 pt-16">
@@ -29,7 +161,7 @@ export default function Home() {
             <span className="inline-block px-3 py-1 rounded bg-accent/20 text-accent text-[10px] font-bold tracking-widest uppercase mb-6 border border-accent/30">
               참여 민주주의, 광주의 미래
             </span>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter leading-[1.1] mb-8 text-white whitespace-pre-line">
+            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tighter leading-[1.1] mb-8 text-white whitespace-pre-line">
               {settings.homepageHeroTitle}
             </h1>
             <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed font-light max-w-2xl">
@@ -74,42 +206,53 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {posts.map((post, idx) => (
-            <motion.article
-              key={post.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              onClick={() => post.url && window.open(post.url, '_blank')}
-              className="group cursor-pointer"
-            >
-              <div className="aspect-[16/10] overflow-hidden rounded-xl mb-6 relative border border-slate-800 ring-1 ring-white/5 group-hover:ring-accent/50 transition-all duration-500">
-                <img 
-                  src={post.imageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1000&auto=format&fit=crop"} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="px-2 py-0.5 bg-accent/80 backdrop-blur-md rounded text-[9px] font-bold uppercase tracking-wider text-white">
-                    {post.category}
-                  </span>
+        {loading ? (
+          <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+            <span className="text-sm font-light">최신 활동 소식을 불러오고 있습니다...</span>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 font-light border border-slate-900 rounded-3xl bg-[#0F0F0F] text-sm">
+            등록된 활동소식이 없습니다.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {posts.map((post, idx) => (
+              <motion.article
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                onClick={() => setSelectedPost(post)}
+                className="group cursor-pointer bg-[#0F0F0F]/60 border border-slate-900 rounded-3xl p-6 hover:border-accent/40 transition-all duration-300"
+              >
+                <div className="aspect-[16/10] overflow-hidden rounded-xl mb-6 relative border border-slate-800 ring-1 ring-white/5 group-hover:ring-accent/50 transition-all duration-500">
+                  <img 
+                    src={post.imageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1000&auto=format&fit=crop"} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute top-4 left-4">
+                    <span className="px-2 py-0.5 bg-accent/80 backdrop-blur-md rounded text-[9px] font-bold uppercase tracking-wider text-white">
+                      {post.category}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {post.date}</span>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {post.date}</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-white group-hover:text-accent transition-colors leading-tight">
+                    {post.title}
+                  </h3>
+                  <p className="text-slate-400 text-sm line-clamp-2 font-light leading-relaxed">
+                    {post.excerpt || post.content}
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-white group-hover:text-accent transition-colors leading-tight">
-                  {post.title}
-                </h3>
-                <p className="text-slate-400 text-sm line-clamp-2 font-light leading-relaxed">
-                  {post.excerpt}
-                </p>
-              </div>
-            </motion.article>
-          ))}
-        </div>
+              </motion.article>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Values/Mission */}
@@ -178,35 +321,22 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[
-              {
-                title: "광주참여자치시민연대, '광주시 도시개발사업' 투명성 확보 촉구 성명",
-                source: "씨티뉴스",
-                date: "2024-03-20",
-                url: "https://blog.naver.com/gjct21/223389210541"
-              },
-              {
-                title: "광주시민연대, '경기도 광주시의회 의정비 인상안' 재고 요청",
-                source: "경인일보",
-                date: "2024-02-15",
-                url: "https://blog.naver.com/gjct21/223354210100"
-              }
-            ].map((news, i) => (
+            {news.map((item, i) => (
               <motion.div
-                key={i}
+                key={item.id || i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                onClick={() => window.open(news.url, '_blank')}
+                onClick={() => window.open(getArticleUrl(item), '_blank')}
                 className="bg-[#141414] border border-slate-800 p-8 rounded-2xl hover:border-accent/40 transition-all group cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="px-2 py-0.5 bg-slate-800 rounded text-[10px] font-bold text-accent uppercase tracking-widest">{news.source}</span>
-                    <span className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">{news.date}</span>
+                    <span className="px-2 py-0.5 bg-slate-800 rounded text-[10px] font-bold text-accent uppercase tracking-widest">{item.source}</span>
+                    <span className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">{item.date}</span>
                   </div>
                   <h3 className="text-xl font-bold text-white group-hover:text-accent transition-colors leading-tight mb-4">
-                    {news.title}
+                    {item.title}
                   </h3>
                 </div>
                 <div className="flex items-center gap-2 text-accent text-[11px] font-bold uppercase tracking-widest mt-4">
@@ -238,24 +368,75 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="lg:col-span-2 aspect-video bg-[#141414] border border-slate-800 rounded-3xl flex flex-col items-center justify-center text-center p-8 space-y-4">
-              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent">
-                <Play className="w-8 h-8 fill-current" />
-              </div>
-              <h4 className="text-xl font-bold text-white">현장 스케치 & 라이브</h4>
-              <p className="text-slate-500 text-sm font-light">광주참여자치시민연대의 다양한 <br />현장 활동 기록을 확인하세요.</p>
-            </div>
-            <div className="aspect-square md:aspect-auto bg-[#141414] border border-slate-800 rounded-3xl flex flex-col items-center justify-center text-center p-8 space-y-4">
-              <Youtube className="w-10 h-10 text-slate-700" />
-              <h4 className="text-white font-bold">교육/강연</h4>
-              <p className="text-slate-500 text-xs font-light">다양한 주제의 <br />강연 영상을 제공합니다.</p>
-            </div>
-            <div className="aspect-square md:aspect-auto bg-[#141414] border border-slate-800 rounded-3xl flex flex-col items-center justify-center text-center p-8 space-y-4">
-              <ExternalLink className="w-10 h-10 text-slate-700" />
-              <h4 className="text-white font-bold">언론 보도</h4>
-              <p className="text-slate-500 text-xs font-light">미디어에 비친 <br />우리의 발자취입니다.</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {DEFAULT_VIDEOS.slice(0, 3).map((video, idx) => {
+              const vId = getYoutubeId(video.youtubeUrl || '');
+              const isChannel = video.id === 'v-channel';
+              return (
+                <motion.div
+                  key={video.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                  className={`border overflow-hidden group transition-all flex flex-col rounded-3xl ${
+                    isChannel 
+                      ? "bg-accent/5 border-accent/20 hover:border-accent/40 shadow-lg shadow-accent/5" 
+                      : "bg-[#141414] border-slate-800 hover:border-accent/30"
+                  }`}
+                >
+                  <div className="relative aspect-video bg-black overflow-hidden">
+                    <img 
+                      src={video.imageUrl || (vId ? `https://img.youtube.com/vi/${vId}/hqdefault.jpg` : "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=1000&auto=format&fit=crop")} 
+                      alt={video.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
+                      referrerPolicy="no-referrer"
+                    />
+                    {video.youtubeUrl && (
+                      <a 
+                        href={video.youtubeUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30">
+                          <Play className="w-7 h-7 fill-current text-white" />
+                        </div>
+                      </a>
+                    )}
+                  </div>
+                  <div className="p-6 flex-1 flex flex-col justify-between">
+                    <div>
+                      {isChannel && (
+                        <div className="mb-2 text-accent text-[9px] font-bold tracking-widest uppercase flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                          공식 미디어 채널
+                        </div>
+                      )}
+                      <h3 className="text-base font-bold text-white leading-snug group-hover:text-accent transition-colors mb-2 line-clamp-2">
+                        {video.title}
+                      </h3>
+                      <p className="text-slate-400 text-xs font-light mb-4 line-clamp-2 leading-relaxed">
+                        {video.excerpt || video.content}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t border-white/5 font-bold text-[9px] uppercase tracking-widest text-slate-500">
+                      {isChannel ? (
+                        <>
+                          <span className="flex items-center gap-1.5 text-accent font-extrabold"><Youtube className="w-3.5 h-3.5 text-red-500 animate-pulse" /> OFFICIAL CHANNEL</span>
+                          <span className="text-accent group-hover:text-white transition-colors cursor-pointer underline decoration-dotted">채널 구독</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex items-center gap-1.5"><Youtube className="w-3.5 h-3.5 text-red-500" /> YouTube Record</span>
+                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {video.date}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -315,6 +496,69 @@ export default function Home() {
           정기후원 참여하기
         </button>
       </section>
+
+      {/* Detail Modal */}
+      {selectedPost && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#111111] border border-slate-850 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+          >
+            <div className="p-6 border-b border-slate-800/80 flex items-center justify-between">
+              <span className="px-2.5 py-1 bg-accent/80 backdrop-blur-md text-white rounded text-[10px] font-bold uppercase tracking-widest">
+                {selectedPost.category}
+              </span>
+              <button 
+                onClick={() => setSelectedPost(null)}
+                className="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider border border-slate-800 hover:border-slate-700 px-3.5 py-2 rounded-xl transition-all"
+              >
+                닫기 ✕
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto p-8 space-y-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-[11px] text-slate-500 uppercase tracking-wider font-mono">
+                  <span>날짜: {selectedPost.date}</span>
+                  <span>|</span>
+                  <span>작성자: {selectedPost.author}</span>
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+                  {selectedPost.title}
+                </h2>
+              </div>
+
+              {selectedPost.imageUrl && (
+                <div className="aspect-[16/9] w-full rounded-2xl overflow-hidden border border-slate-850">
+                  <img 
+                    src={selectedPost.imageUrl} 
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              )}
+
+              <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-line font-light py-2">
+                {selectedPost.content || selectedPost.excerpt}
+              </div>
+            </div>
+
+            {selectedPost.url && (
+              <div className="p-6 border-t border-slate-800 bg-[#161616] flex justify-end">
+                <a 
+                  href={selectedPost.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 bg-accent hover:brightness-110 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-lg shadow-accent/25"
+                >
+                  블로그 상세 링크로 이동 &rarr;
+                </a>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

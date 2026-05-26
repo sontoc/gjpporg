@@ -10,7 +10,8 @@ import {
   Send,
   Loader2,
   Lock,
-  ArrowLeft
+  ArrowLeft,
+  PenTool
 } from 'lucide-react';
 import { 
   collection, 
@@ -131,13 +132,23 @@ const Board: React.FC = () => {
                 className="bg-slate-900/50 border border-slate-800 rounded-full py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-accent/50 w-full md:w-64"
               />
             </div>
-            <button 
-              onClick={() => user ? setIsModalOpen(true) : signInWithGoogle()}
-              className="bg-accent text-white px-6 py-2 rounded-full font-bold text-sm flex items-center gap-2 hover:brightness-110 transition-all shadow-lg shadow-accent/20 shrink-0"
-            >
-              {user ? <Plus className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-              {user ? '글쓰기' : '로그인 후 작성'}
-            </button>
+            {user ? (
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-white px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0 shadow-lg shadow-accent/5 cursor-pointer font-sans"
+              >
+                <PenTool className="w-3.5 h-3.5" />
+                <span>글쓰기</span>
+              </button>
+            ) : (
+              <button 
+                onClick={() => signInWithGoogle()}
+                className="bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0 cursor-pointer font-sans"
+              >
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                <span>로그인 후 작성</span>
+              </button>
+            )}
           </div>
         </header>
 

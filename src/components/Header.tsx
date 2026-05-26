@@ -11,6 +11,7 @@ export default function Header() {
   const location = useLocation();
   const settings = storage.getSettings();
   const user = storage.getUser();
+  const isAdmin = user?.isAdmin === true || ['sonfrom@gmail.com', 'son3u@daum.net'].includes(user?.email?.toLowerCase() || '');
 
   const navItems = [
     { name: '홈', path: '/' },
@@ -27,11 +28,12 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#0F0F0F]/80 backdrop-blur-md border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center font-bold text-white group-hover:scale-110 group-hover:rotate-3 transition-all text-xs shadow-lg shadow-accent/20">참</div>
+          <div className="px-2.5 h-8 bg-accent rounded-lg flex items-center justify-center font-bold text-white group-hover:scale-110 group-hover:rotate-3 transition-all text-xs shadow-lg shadow-accent/20 tracking-wider">ㅅㅅㅅ</div>
           <span className={cn(
-            "text-lg font-bold tracking-tight text-white transition-opacity group-hover:opacity-80"
+            "text-base md:text-lg font-bold tracking-tight text-white transition-opacity group-hover:opacity-80 flex items-center flex-wrap gap-1"
           )}>
-            {settings.name}
+            <span>광주시민연대</span>
+            <span className="text-slate-400 text-[10px] md:text-xs font-normal">(광주참여자치시민연대)</span>
           </span>
         </Link>
 
@@ -51,10 +53,17 @@ export default function Header() {
           ))}
           {user ? (
             <div className="flex items-center gap-4">
-              <Link to="/admin" className="p-2 rounded-full bg-accent/20 text-accent hover:bg-accent/30 transition-all border border-accent/20 flex items-center justify-center gap-1.5 px-3.5" title={`${user.email}`}>
-                <User className="w-4 h-4 animate-pulse text-accent" />
-                <span className="text-xs font-semibold">{user.email.split('@')[0]}</span>
-              </Link>
+              {isAdmin ? (
+                <Link to="/admin" className="p-2 rounded-full bg-accent/20 text-accent hover:bg-accent/30 transition-all border border-accent/20 flex items-center justify-center gap-1.5 px-3.5" title={`${user.email}`}>
+                  <User className="w-4 h-4 animate-pulse text-accent" />
+                  <span className="text-xs font-semibold">{user.email.split('@')[0]} (관리자)</span>
+                </Link>
+              ) : (
+                <div className="p-2 rounded-full bg-slate-900 border border-slate-800 flex items-center gap-1.5 px-3.5 text-slate-400">
+                  <User className="w-4 h-4 text-slate-500" />
+                  <span className="text-xs font-semibold">{user.email.split('@')[0]}</span>
+                </div>
+              )}
               <button 
                 onClick={async () => {
                   try {
@@ -114,15 +123,17 @@ export default function Header() {
           {user ? (
             <>
               <div className="text-xs text-slate-500 italic px-1">
-                로그인됨: {user.email}
+                로그인됨: {user.email} {isAdmin && '(관리자)'}
               </div>
-              <Link 
-                to="/admin" 
-                onClick={() => setIsOpen(false)}
-                className="text-lg font-medium text-accent"
-              >
-                관리자 대시보드
-              </Link>
+              {isAdmin && (
+                <Link 
+                  to="/admin" 
+                  onClick={() => setIsOpen(false)}
+                  className="text-lg font-medium text-accent"
+                >
+                  관리자 대시보드
+                </Link>
+              )}
               <button 
                 onClick={async () => {
                   setIsOpen(false);

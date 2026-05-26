@@ -1,17 +1,23 @@
 import { Link } from 'react-router-dom';
 import { Shield, Facebook, Youtube, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { storage } from '../services/storage';
+import { TransparentLogo } from './TransparentLogo';
 
 export default function Footer() {
   const settings = storage.getSettings();
 
   return (
-    <footer className="bg-[#0F0F0F] border-t border-slate-800 py-24">
+    <footer className="bg-black border-t border-slate-900 py-24">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-16">
         <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-accent rounded flex items-center justify-center font-bold text-white text-xs shadow-lg shadow-accent/20">참</div>
-            <span className="text-lg font-bold text-white tracking-tight">{settings.name}</span>
+          <div className="flex flex-col gap-3">
+            <div className="select-none self-start">
+              <TransparentLogo 
+                src="https://postfiles.pstatic.net/MjAyNjA1MjJfMTkg/MDAxNzc5NDQ2ODUwNTA5.ehFWlj6XKybyxZ461_dKU3DyGZu3Rjzu265h8QFXhpog.NmsKbc80Vmu3zxrJ9UJ22ERcM6oS-1TTPFy-V1W0M3og.PNG/%EC%9E%90%EC%82%B0_1%EA%B4%91%EC%A3%BC%EC%B0%B8%EC%97%AC%EC%9E%90%EC%B9%98%EC%8B%9C%EB%AF%BC%EC%97%B0%EB%8C%80_%ED%8D%BC%ED%94%8C2.png?type=w3840" 
+                className="h-14 w-auto object-contain" 
+                alt="광주참여자치시민연대 로고" 
+              />
+            </div>
           </div>
           <p className="text-slate-500 text-xs leading-relaxed font-light italic">
             {settings.description}

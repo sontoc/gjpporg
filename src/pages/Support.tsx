@@ -22,6 +22,13 @@ import { supabase } from '../lib/supabase';
 const SupportPage: React.FC = () => {
   const settings = storage.getSettings();
   const [activeTab, setActiveTab] = useState<'info' | 'form'>('info');
+  const [copiedBank, setCopiedBank] = useState(false);
+
+  const handleCopyBank = () => {
+    navigator.clipboard.writeText('317-0026-0245-11');
+    setCopiedBank(true);
+    setTimeout(() => setCopiedBank(false), 2000);
+  };
 
   // Form State
   const [formData, setFormData] = useState({
@@ -243,14 +250,24 @@ using (true);
                     {type.link ? (
                       <button 
                         onClick={() => setActiveTab('form')}
-                        className="w-full py-3 bg-accent text-white rounded-lg font-bold text-sm hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                        className="w-full h-14 bg-accent text-white rounded-lg font-bold text-xs sm:text-sm hover:brightness-110 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
                       >
-                        간편 온라인 가입하기 <Sparkles className="w-4 h-4 text-amber-300" />
+                        간편 온라인 가입하기 <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
                       </button>
                     ) : (
-                      <div className="w-full py-2.5 bg-slate-800 text-slate-300 rounded-lg font-medium text-xs flex flex-col items-center justify-center border border-slate-700">
-                        <span className="font-bold text-white mb-0.5">계좌: {type.bankInfo?.split(' ')[1]}</span>
-                        <span className="text-[10px] text-slate-400">{type.bankInfo?.split(' ')[2]}</span>
+                      <div 
+                        onClick={handleCopyBank}
+                        className="w-full h-14 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-slate-600 text-white rounded-lg flex flex-col items-center justify-center transition-all px-2 cursor-pointer select-none shrink-0"
+                        title="클릭 시 계좌번호 복사"
+                      >
+                        {copiedBank ? (
+                          <span className="text-emerald-400 text-xs font-bold animate-pulse">계좌번호가 복사되었습니다!</span>
+                        ) : (
+                          <div className="text-center">
+                            <span className="block text-[13px] sm:text-sm font-bold text-yellow-500 leading-normal">후원계좌 : 농협 317-0026-0245-11</span>
+                            <span className="block text-[11px] text-slate-400 font-medium leading-normal">광주참여자치시민연대</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -485,7 +502,7 @@ using (true);
                           name="address"
                           value={formData.address}
                           onChange={handleInputChange}
-                          placeholder="광주광역시 동구 (상세 주소)"
+                          placeholder="경기도 광주시 회안대로 (상세 주소)"
                           className="w-full bg-[#161616] border border-slate-800 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent font-light"
                         />
                       </div>

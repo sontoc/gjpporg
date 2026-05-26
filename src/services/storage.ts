@@ -32,8 +32,9 @@ export const storage = {
     localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
   },
   login: (email: string) => {
-    // Mock login
-    localStorage.setItem(AUTH_KEY, JSON.stringify({ email, isAdmin: true }));
+    const adminEmails = ['sonfrom@gmail.com', 'son3u@daum.net'];
+    const isAdmin = adminEmails.includes(email.trim().toLowerCase());
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ email, isAdmin }));
     return true;
   },
   logout: () => {

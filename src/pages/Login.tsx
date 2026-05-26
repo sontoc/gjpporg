@@ -16,6 +16,7 @@ import {
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { storage } from '../services/storage';
+import { TransparentLogo } from '../components/TransparentLogo';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -128,8 +129,14 @@ export default function Login() {
         </Link>
 
         {/* Logo and Greeting */}
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center font-bold text-white mx-auto mb-4 text-sm shadow-xl shadow-accent/25">참</div>
+        <div className="text-center mb-8 px-4">
+          <div className="select-none mx-auto mb-4 inline-flex items-center justify-center bg-transparent">
+            <TransparentLogo 
+              src="https://postfiles.pstatic.net/MjAyNjA1MjJfMTAg/MDAxNzc5NDQxODc1MDA2.nW_uKcVcDfKX2ulMGsz0wCpxcVLKxHpQcjmTaDzOmnog.JywPAhgtR07FKPMq5hiLLP8CQXbGli78WpKxxkXpawkg.PNG/%EA%B4%91%EC%A3%BC%EC%8B%9C%EB%AF%BC%EC%97%B0%EB%8C%80%EB%A1%9C%EA%B3%A0.png?type=w3840" 
+              className="h-14 w-auto object-contain" 
+              alt="광주참여자치시민연대 로고" 
+            />
+          </div>
           <h2 className="text-3xl font-bold text-white tracking-tight">시민 광장 참여 커뮤니티</h2>
           <p className="text-slate-400 text-xs mt-1 font-light">소통하고 행동하는 정직한 광주 공동체</p>
         </div>
@@ -176,10 +183,27 @@ export default function Login() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-red-950/30 border border-red-900/60 p-3.5 rounded-xl text-xs text-red-300 font-light flex items-start gap-2 mb-4"
+                className="bg-red-950/30 border border-red-900/60 p-4 rounded-xl text-xs text-red-300 font-light flex flex-col gap-3 mb-4"
               >
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <span>{errorMsg}</span>
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <span>{errorMsg}</span>
+                </div>
+                {email && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Bypass email confirmation for quick development testing
+                      storage.login(email);
+                      navigate(from === '/login' ? '/' : from, { replace: true });
+                      window.location.reload();
+                    }}
+                    className="mt-1 bg-red-900/40 hover:bg-accent border border-red-800/80 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all self-start flex items-center gap-1 shadow"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    이메일 미인증 상태로 즉시 로그인 (테스트 대시보드 진입)
+                  </button>
+                )}
               </motion.div>
             )}
 
@@ -196,8 +220,21 @@ export default function Login() {
                 </div>
                 <p className="leading-relaxed text-slate-300 text-[11px]">
                   회원가입 절차를 마치려면 가입하신 이메일(<b className="text-white font-semibold">{email}</b>) 메일함에서 
-                  <b> Supabase 인증 확인 링크</b>를 클릭하셔야 합니다. 링크를 클릭하여 인증을 마친 후 로그인을 진행해 주세요!
+                  <b> Supabase 인증 확인 링크</b>를 클릭하셔야 합니다.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Instantly let user login bypassing confirmation email
+                    storage.login(email);
+                    navigate(from === '/login' ? '/' : from, { replace: true });
+                    window.location.reload();
+                  }}
+                  className="bg-emerald-800 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow"
+                >
+                  <Sparkles className="w-4 h-4 text-yellow-300" />
+                  인증 무시하고 테스트 계정으로 즉시 진입하기
+                </button>
                 <div className="text-[10px] text-slate-500 italic pt-1 flex items-center gap-1">
                   <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
                   <span>수신함에 메일이 오지 않는다면 스팸 메일함을 체크해 보시기 바랍니다.</span>
@@ -285,18 +322,6 @@ export default function Login() {
               )}
             </button>
           </form>
-
-          {/* Prompt User Details info for testing (Korean) */}
-          <div className="mt-8 pt-6 border-t border-slate-800 text-center space-y-2">
-            <span className="text-[10px] text-slate-500 font-light flex items-center justify-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-500" />
-              개발자 테스트용 또는 관리자 연계 계정
-            </span>
-            <div className="text-[10px] bg-[#161616] p-2.5 rounded-lg border border-slate-850 text-slate-400 font-mono flex flex-col items-center">
-              <span>ID: son3u@daum.net</span>
-              <span>PW: VISION10@91</span>
-            </div>
-          </div>
 
         </div>
       </div>
