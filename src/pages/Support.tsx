@@ -279,10 +279,10 @@ using (true);
                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 blur-[100px] rounded-full -mr-32 -mt-32" />
                 <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                   <div className="space-y-6">
-                    <h2 className="text-2xl md:text-3xl font-bold text-white">후원 혜택 및 안내</h2>
+                    <h2 className="text-2xl md:text-3xl font-bold text-white">후원 회원 가입</h2>
                     <p className="text-slate-400 text-sm font-light leading-relaxed">
-                      광주참여자치시민연대는 정부 및 산하기관의 지원금이나 대기업의 대규모 기부금을 일절 수령하지 않는 것을 원칙으로 합니다.<br /><br />
-                      깨끗하고 올곧은 감시 활동은 오직 시민 한 분 한 분의 회비로 지켜집니다. 후원해주시는 기부금은 기부금 영수증이 발행되며, 세제 혜택(소득공제)을 받으실 수 있습니다.
+                      광주참여자치시민연대는 오직 시민의 후원으로만 운영되며 독립적인 권력 감시와 모니터링을 위해 (공익 활동을 위한 투명한 지원금을 제외하고) 지자체 및 정부의 지원금을 일절 지원 받지 않습니다.<br /><br />
+                      현재 세제혜택(소득공제) 및 기부금 영수증을 발행하기 위한 민간 단체로의 등록을 진행하고 있습니다.
                     </p>
                     <div className="space-y-3 pt-4 border-t border-slate-800">
                       <div className="flex items-center gap-3 text-slate-300 font-light text-sm">

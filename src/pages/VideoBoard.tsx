@@ -197,7 +197,14 @@ const VideoBoard: React.FC = () => {
                       {isChannel ? (
                         <>
                           <span className="flex items-center gap-1.5 text-accent font-extrabold"><Youtube className="w-3.5 h-3.5 text-red-500 animate-pulse" /> OFFICIAL CHANNEL</span>
-                          <span className="text-accent hover:text-white transition-colors cursor-pointer underline decoration-dotted">채널가서 구독</span>
+                          <a 
+                            href={video.youtubeUrl || "https://www.youtube.com/@gjpp"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent hover:text-white transition-colors cursor-pointer underline decoration-dotted"
+                          >
+                            채널구독
+                          </a>
                         </>
                       ) : (
                         <>

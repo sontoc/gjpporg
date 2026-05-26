@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 const AboutPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'declaration' | 'statutes' | 'rules' | 'executives' | 'organization' | 'history' | 'location'>('declaration');
   const [copiedAddress, setCopiedAddress] = useState(false);
-  const [activeMap, setActiveMap] = useState<'kakao' | 'google' | 'naver'>('kakao');
+  const [activeMap, setActiveMap] = useState<'kakao' | 'google' | 'naver'>('google');
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText("경기도 광주시 회안대로 980, 3층");

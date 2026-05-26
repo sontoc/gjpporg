@@ -5,10 +5,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { storage } from '../services/storage';
 
-const NewsPage: React.FC = () => {
-  const user = storage.getUser();
-  const isAdmin = user?.isAdmin === true || ['sonfrom@gmail.com', 'son3u@daum.net'].includes(user?.email?.toLowerCase() || '');
-  const newsItems = [
+export const newsItems = [
     {
       id: 45,
       title: "[성명서] 아동권리보장원의 행정은 멈출 수 있어도, 아이의 시간은 멈출 수 없습니다",
@@ -442,6 +439,10 @@ const NewsPage: React.FC = () => {
       excerpt: "과밀 통폐합에 따른 무분별한 지방 소외와 실익 누수 극복을 목표로 공동 연대를 구성한 삼개시 자치단체 연대의 튼실한 협동 고발 모습입니다."
     }
   ];
+
+const NewsPage: React.FC = () => {
+  const user = storage.getUser();
+  const isAdmin = user?.isAdmin === true || ['sonfrom@gmail.com', 'son3u@daum.net'].includes(user?.email?.toLowerCase() || '');
 
   const getArticleUrl = (newsItem: { url: string; title: string }) => {
     if (!newsItem.url || newsItem.url === '#' || newsItem.url === '') {

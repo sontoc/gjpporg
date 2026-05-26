@@ -1,16 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Calendar, User, Tag, ChevronRight, ExternalLink, MessageSquare, Send, Play, Youtube, Loader2 } from 'lucide-react';
+import { ArrowRight, Calendar, User, Tag, ChevronRight, ExternalLink, MessageSquare, Send, Play, Youtube, Loader2, PenTool } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { storage } from '../services/storage';
 import { supabase } from '../lib/supabase';
 import { Post } from '../types';
 import { DEFAULT_VIDEOS } from '../constants';
+import { newsItems } from './News';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 export default function Home() {
   const settings = storage.getSettings();
   const [posts, setPosts] = useState<Post[]>([]);
   const [news, setNews] = useState<any[]>([]);
+  const [homeVideos, setHomeVideos] = useState<Post[]>(DEFAULT_VIDEOS.slice(0, 3));
+  const [boardPosts, setBoardPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
@@ -73,37 +80,84 @@ export default function Home() {
           .from('community_posts')
           .select('*')
           .eq('category', 'news')
-          .order('id', { ascending: false })
-          .limit(2);
+          .order('id', { ascending: false });
 
-        const defaultNews = [
-          {
-            id: 'fallback-1',
-            title: "경기 광주시민연대, '광주시 도시개발사업' 보전 및 투명성 촉구 성명",
-            source: "씨티뉴스",
-            date: "2024-03-20",
-            url: "https://cafe.naver.com/gjpp2022"
-          },
-          {
-            id: 'fallback-2',
-            title: "경기도 광주시민연대, '광주시의회 의정비 급격 인상안' 재고 주민 요청",
-            source: "경인일보",
-            date: "2024-02-15",
-            url: "https://cafe.naver.com/gjpp2022"
-          }
-        ];
-
+        let dbNewsMapped: any[] = [];
         if (newsData && newsData.length > 0) {
-          const mappedNews = newsData.map((p: any) => ({
+          dbNewsMapped = newsData.map((p: any) => ({
             id: p.id,
             title: p.title || '',
             source: p.source || '참여자치연대',
             date: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            url: p.post_url || '#'
+            url: p.post_url || '#',
+            excerpt: p.excerpt || p.content || ''
           }));
-          setNews([...mappedNews, ...defaultNews].slice(0, 2));
-        } else {
-          setNews(defaultNews);
+        }
+
+        const mergedNews = [...dbNewsMapped, ...newsItems]
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 4);
+        setNews(mergedNews);
+
+        // 3. Fetch videos
+        try {
+          const { data: videoData, error: videoErr } = await supabase
+            .from('community_posts')
+            .select('*')
+            .eq('category', 'video')
+            .order('id', { ascending: false });
+
+          const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
+          const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
+
+          if (videoData && videoData.length > 0) {
+            const mappedVideos = videoData.map((p: any) => ({
+              id: p.id,
+              title: p.title || '',
+              content: p.content || '',
+              excerpt: p.excerpt || '',
+              category: 'video',
+              date: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              author: p.author || '관리자',
+              imageUrl: p.image_url || undefined,
+              youtubeUrl: p.youtube_url || p.post_url || ''
+            }));
+
+            const dbVideos = mappedVideos.filter(v => v.id !== "v-channel");
+            const sortedOthers = [...dbVideos, ...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            const merged = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
+            setHomeVideos(merged.slice(0, 3));
+          } else {
+            const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            const sorted = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
+            setHomeVideos(sorted.slice(0, 3));
+          }
+        } catch (vErr) {
+          console.error('Error fetching videos in Home:', vErr);
+          const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
+          const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
+          const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          const sorted = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
+          setHomeVideos(sorted.slice(0, 3));
+        }
+
+        // 4. Fetch board posts from Firebase
+        try {
+          const boardQuery = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(5));
+          const boardSnapshot = await getDocs(boardQuery);
+          const fetchedBoardPosts = boardSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              title: data.title || '',
+              content: data.content || '',
+              authorName: data.authorName || '익명',
+              createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+            };
+          });
+          setBoardPosts(fetchedBoardPosts);
+        } catch (boardError) {
+          console.error("Error fetching board posts in Home:", boardError);
         }
 
       } catch (err) {
@@ -115,22 +169,36 @@ export default function Home() {
           mergedAct.push({ ...lp, category: '활동소식' });
         }
         setPosts(mergedAct);
-        setNews([
-          {
-            id: 'fallback-1',
-            title: "경기 광주시민연대, '광주시 도시개발사업' 보전 및 투명성 촉구 성명",
-            source: "씨티뉴스",
-            date: "2024-03-20",
-            url: "https://cafe.naver.com/gjpp2022"
-          },
-          {
-            id: 'fallback-2',
-            title: "경기도 광주시민연대, '광주시의회 의정비 급격 인상안' 재고 주민 요청",
-            source: "경인일보",
-            date: "2024-02-15",
-            url: "https://cafe.naver.com/gjpp2022"
-          }
-        ]);
+        
+        const sortedStaticNews = [...newsItems]
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 4);
+        setNews(sortedStaticNews);
+
+        const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
+        const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
+        const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const sorted = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
+        setHomeVideos(sorted.slice(0, 3));
+
+        // Fallback fetch
+        try {
+          const boardQuery = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(5));
+          const boardSnapshot = await getDocs(boardQuery);
+          const fetchedBoardPosts = boardSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              title: data.title || '',
+              content: data.content || '',
+              authorName: data.authorName || '익명',
+              createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+            };
+          });
+          setBoardPosts(fetchedBoardPosts);
+        } catch (bErr) {
+          console.error("Error fetching board posts fallback:", bErr);
+        }
       } finally {
         setLoading(false);
       }
@@ -232,11 +300,6 @@ export default function Home() {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute top-4 left-4">
-                    <span className="px-2 py-0.5 bg-accent/80 backdrop-blur-md rounded text-[9px] font-bold uppercase tracking-wider text-white">
-                      {post.category}
-                    </span>
-                  </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
@@ -266,7 +329,7 @@ export default function Home() {
               {[
                 { title: '권력 감시 및 정책 연구', desc: '국가와 지방 권력의 투명성과 책임성 제고를 위한 모니터링 및 정책 연구' },
                 { title: '평화 실현 및 평화 교육', desc: '전쟁 없는 평화 사회를 위한 연구, 시민 교육 및 평화 문화 확산 사업' },
-                { title: '인권 증진 및 공익 지원', desc: '사회적 약자의 존엄성 보호를 위한 제도 개선, 인권 교육 및 상담 지원' },
+                { title: '인권 증진 및 공익 지원', desc: '사회적 약자의 존엄성 보호를 위한 제도 개선, 인권 공익 활동 지원' },
                 { title: '역사 계승 및 미래세대 지원', desc: '역사적 진실을 올바르게 기억하고 계승하기 위한 청년/청소년 참여 지원' },
                 { title: '문화 및 연대 활동', desc: '시민평화축제(기림제) 기획·운영 및 국내외 시민단체와의 연대 활동' },
                 { title: '생태 환경 및 기후 정의', desc: 'RE100 에너지 전환 및 자원 순환 정책 등 환경 실천 사업' }
@@ -369,7 +432,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {DEFAULT_VIDEOS.slice(0, 3).map((video, idx) => {
+            {homeVideos.map((video, idx) => {
               const vId = getYoutubeId(video.youtubeUrl || '');
               const isChannel = video.id === 'v-channel';
               return (
@@ -424,7 +487,14 @@ export default function Home() {
                       {isChannel ? (
                         <>
                           <span className="flex items-center gap-1.5 text-accent font-extrabold"><Youtube className="w-3.5 h-3.5 text-red-500 animate-pulse" /> OFFICIAL CHANNEL</span>
-                          <span className="text-accent group-hover:text-white transition-colors cursor-pointer underline decoration-dotted">채널 구독</span>
+                          <a 
+                            href={video.youtubeUrl || "https://www.youtube.com/@gjpp"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent group-hover:text-white transition-colors cursor-pointer underline decoration-dotted"
+                          >
+                            채널구독
+                          </a>
                         </>
                       ) : (
                         <>
@@ -461,25 +531,68 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#141414] border border-slate-800 p-8 rounded-2xl flex flex-col items-center justify-center text-center space-y-4 py-16">
-              <MessageSquare className="w-10 h-10 text-accent/50" />
-              <h4 className="text-white font-bold">자유로운 소통</h4>
-              <p className="text-slate-500 text-sm font-light leading-relaxed">지역 사회에 대한 제안이나 <br />개인적인 의견을 나누세요.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-2 bg-[#111111] border border-slate-900 rounded-2xl p-6 sm:p-8 flex flex-col justify-between">
+              <div>
+                <h3 className="text-white font-bold text-base mb-6 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                  최근 올라온 글
+                </h3>
+                
+                {boardPosts && boardPosts.length > 0 ? (
+                  <div className="space-y-4">
+                    {boardPosts.map((bp) => (
+                      <Link 
+                        key={bp.id}
+                        to="/board"
+                        className="group flex sm:flex-row flex-col sm:items-center justify-between py-3 border-b border-white/5 last:border-0 hover:bg-white/5 px-3 rounded-lg transition-all gap-1"
+                      >
+                        <div className="flex-1 min-w-0 pr-4">
+                          <h4 className="text-sm font-semibold text-slate-200 group-hover:text-accent transition-colors truncate">
+                            {bp.title}
+                          </h4>
+                          <span className="text-[11px] text-slate-500 font-light block mt-1">
+                            {bp.content ? (bp.content.substring(0, 70) + (bp.content.length > 70 ? "..." : "")) : ""}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0 text-right self-end sm:self-center">
+                          <span className="text-xs text-slate-400 font-medium">{bp.authorName || '익명'}</span>
+                          <span className="text-[11px] text-slate-500 font-light">
+                            {bp.createdAt ? format(bp.createdAt instanceof Date ? bp.createdAt : new Date(bp.createdAt), 'yyyy.MM.dd') : ''}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-slate-500 font-light text-sm">
+                    최근 자유게시판에 작성된 글이 없습니다.
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="bg-[#141414] border border-slate-800 p-8 rounded-2xl flex flex-col items-center justify-center text-center space-y-4 py-16">
-              <Send className="w-10 h-10 text-accent/50" />
-              <h4 className="text-white font-bold">생생한 소식</h4>
-              <p className="text-slate-500 text-sm font-light leading-relaxed">시민들이 전하는 우리 동네의 <br />작고 큰 소식들을 확인하세요.</p>
-            </div>
-            <div className="bg-accent/5 border border-accent/20 p-8 rounded-2xl flex flex-col items-center justify-center text-center space-y-6 py-16">
-              <p className="text-white text-sm font-medium leading-relaxed">로그인 후 누구나 <br />글을 작성할 수 있습니다.</p>
-              <Link 
-                to="/board"
-                className="bg-accent text-white px-6 py-2 rounded-full font-bold text-xs"
-              >
-                지금 글쓰기
-              </Link>
+
+            <div className="bg-[#141414] border border-slate-800 p-8 rounded-2xl flex flex-col justify-between items-center text-center space-y-6 py-12">
+              <div className="space-y-4">
+                <div className="w-12 h-12 bg-accent/15 rounded-xl flex items-center justify-center text-accent mx-auto">
+                  <PenTool className="w-5 h-5" />
+                </div>
+                <h4 className="text-white font-bold">참여와 소통의 광장</h4>
+                <p className="text-slate-400 text-xs font-light leading-relaxed max-w-xs mx-auto">
+                  광주시민연대 회원 및 일반 시민 누구나 회원 가입 후 자유롭게 의견을 보태고 지역 소식을 나눌 수 있습니다.
+                </p>
+              </div>
+              <div className="w-full space-y-3">
+                <Link 
+                  to="/board"
+                  className="block w-full text-center bg-accent hover:bg-accent-focus text-white py-3 rounded-xl font-bold text-xs transition-colors"
+                >
+                  지금 글쓰기
+                </Link>
+                <p className="text-[10px] text-slate-600 font-light">
+                  ※ 건전한 소통을 위해 로그인 후 작성 가능합니다.
+                </p>
+              </div>
             </div>
           </div>
         </div>
