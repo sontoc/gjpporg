@@ -285,35 +285,45 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {posts.map((post, idx) => (
-              <motion.article
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                onClick={() => setSelectedPost(post)}
-                className="group cursor-pointer bg-[#0F0F0F]/60 border border-slate-900 rounded-3xl p-6 hover:border-accent/40 transition-all duration-300"
-              >
-                <div className="aspect-[16/10] overflow-hidden rounded-xl mb-6 relative border border-slate-800 ring-1 ring-white/5 group-hover:ring-accent/50 transition-all duration-500">
-                  <img 
-                    src={post.imageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1000&auto=format&fit=crop"} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
-                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {post.date}</span>
+            {posts.map((post, idx) => {
+              const handleArticleClick = () => {
+                if (post.url) {
+                  window.open(post.url, '_blank', 'noopener,noreferrer');
+                } else {
+                  setSelectedPost(post);
+                }
+              };
+
+              return (
+                <motion.article
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  onClick={handleArticleClick}
+                  className="group cursor-pointer flex flex-col items-start h-full bg-transparent border-0 p-0 transition-all duration-300 pb-4"
+                >
+                  <div className="w-full aspect-[16/10] rounded-2xl overflow-hidden mb-5 shrink-0 relative border border-transparent ring-1 ring-white/5 group-hover:border-accent group-hover:ring-4 group-hover:ring-accent/30 transition-all duration-300">
+                    <img 
+                      src={post.imageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1000&auto=format&fit=crop"} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
                   </div>
-                  <h3 className="text-lg font-bold text-white group-hover:text-accent transition-colors leading-tight">
-                    {post.title}
-                  </h3>
-                  <p className="text-slate-400 text-sm line-clamp-2 font-light leading-relaxed">
-                    {post.excerpt || post.content}
-                  </p>
-                </div>
-              </motion.article>
-            ))}
+                  <div className="space-y-2 w-full">
+                    <div className="flex items-center gap-3 text-[10px] text-slate-500 uppercase tracking-widest font-medium">
+                      <span className="flex items-center gap-1"><Calendar className="w-2.5 h-2.5" /> {post.date}</span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-accent transition-colors leading-snug sm:leading-tight">
+                      {post.title}
+                    </h3>
+                    <p className="text-slate-400 text-xs sm:text-sm line-clamp-2 font-light leading-relaxed">
+                      {post.excerpt || post.content}
+                    </p>
+                  </div>
+                </motion.article>
+              );
+            })}
           </div>
         )}
       </section>
@@ -604,7 +614,7 @@ export default function Home() {
         <p className="text-lg text-slate-400 mb-12 font-light">지금 {settings.name}의 회원이 되어 정의롭고 투명한 광주를 함께 만들어가세요.</p>
         <button 
           onClick={() => settings.donationUrl && window.open(settings.donationUrl, '_blank')}
-          className="px-10 py-4 bg-white text-black rounded font-bold hover:bg-slate-200 transition-colors text-sm"
+          className="px-10 py-4 bg-accent text-white rounded font-bold hover:bg-orange-500 transition-all duration-300 text-sm shadow-lg shadow-accent/20 hover:shadow-orange-500/30"
         >
           정기후원 참여하기
         </button>
