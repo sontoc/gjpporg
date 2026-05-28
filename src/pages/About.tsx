@@ -9,7 +9,7 @@ const AboutPage: React.FC = () => {
   const [activeMap, setActiveMap] = useState<'kakao' | 'google' | 'naver'>('google');
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText("경기도 광주시 회안대로 980, 3층");
+    navigator.clipboard.writeText("경기 광주시 양촌길 124-8(3층)");
     setCopiedAddress(true);
     setTimeout(() => setCopiedAddress(false), 2000);
   };
@@ -899,7 +899,7 @@ const AboutPage: React.FC = () => {
                     <span className="text-[10px] uppercase font-bold tracking-widest text-accent">Office Location</span>
                     <h4 className="text-lg font-bold text-white">사무국 주소</h4>
                     <p className="text-slate-400 font-light text-sm">
-                      경기도 광주시 회안대로 980, 3층 (송정동)
+                      경기 광주시 양촌길 124-8(3층)
                     </p>
                   </div>
                   <button 
@@ -938,7 +938,7 @@ const AboutPage: React.FC = () => {
                   <div className="h-[280px] sm:h-[350px] md:h-[400px] w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl relative bg-slate-950">
                     {activeMap === 'google' ? (
                       <iframe 
-                        src={`https://maps.google.com/maps?q=${encodeURIComponent('경기도 광주시 회안대로 980')}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent('경기 광주시 양촌길 124-8')}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
                         width="100%" 
                         height="100%" 
                         style={{ border: 0 }} 
@@ -957,12 +957,11 @@ const AboutPage: React.FC = () => {
                           </div>
                           <div className="space-y-1">
                             <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">광주참여자치시민연대</h3>
-                            <p className="text-slate-400 font-light text-xs md:text-sm">경기도 광주시 회안대로 980 (송정동 980), 3층</p>
+                            <p className="text-slate-400 font-light text-xs md:text-sm">경기 광주시 양촌길 124-8(3층)</p>
                           </div>
                           
                           <div className="pt-2 flex flex-col sm:flex-row gap-y-1 gap-x-6 text-xs text-slate-400">
-                            <div>• <strong className="text-slate-300 font-semibold">경기광주역</strong>에서 시청방면 버스 (10분)</div>
-                            <div>• <strong className="text-slate-300 font-semibold">밀목.광주시청삼거리</strong> 정류장 도보 2분</div>
+                            <div>• <strong className="text-slate-300 font-semibold">경기광주역</strong>에서 버스/택시 이용 양촌마을 방면</div>
                           </div>
                         </div>
 
@@ -971,7 +970,7 @@ const AboutPage: React.FC = () => {
                             ※ 카카오맵은 브라우저 보안 규제에 따른 오류 발생을 방지하기 위해, 원클릭 모바일 앱 또는 공식 전용 지도로 이동하여 실시간 최적 대중교통 경로를 즉시 검색해줍니다.
                           </p>
                           <a 
-                            href={`https://map.kakao.com/?q=${encodeURIComponent('경기도 광주시 회안대로 980')}`}
+                            href={`https://map.kakao.com/?q=${encodeURIComponent('경기 광주시 양촌길 124-8')}`}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="bg-[#FFE812] text-[#3D2005] hover:brightness-105 active:scale-[0.99] px-6 py-3.5 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/5 cursor-pointer"
@@ -992,12 +991,12 @@ const AboutPage: React.FC = () => {
                           </div>
                           <div className="space-y-1">
                             <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">광주참여자치시민연대</h3>
-                            <p className="text-slate-400 font-light text-xs md:text-sm">경기도 광주시 회안대로 980 (송정동 980), 3층</p>
+                            <p className="text-slate-400 font-light text-xs md:text-sm">경기 광주시 양촌길 124-8(3층)</p>
                           </div>
                           
                           <div className="pt-2 flex flex-col sm:flex-row gap-y-1 gap-x-6 text-xs text-slate-400">
-                            <div>• <strong className="text-slate-300 font-semibold">내비게이션</strong> '회안대로 980' 또는 '송정동 980' 검색</div>
-                            <div>• 건물 뒤편 주차 공간 이용 가능</div>
+                            <div>• <strong className="text-slate-300 font-semibold">내비게이션</strong> '양촌길 124-8' 검색</div>
+                            <div>• 건물 주차 공간 이용 가능</div>
                           </div>
                         </div>
 
@@ -1006,7 +1005,7 @@ const AboutPage: React.FC = () => {
                             ※ 네이버지도 앱 또는 공식 사이트를 통해 선명한 로드뷰 사진과 상세 도보 전용 네비게이션을 이용하실 수 있습니다.
                           </p>
                           <a 
-                            href={`https://map.naver.com/v5/search/${encodeURIComponent('경기도 광주시 회안대로 980')}`}
+                            href={`https://map.naver.com/v5/search/${encodeURIComponent('경기 광주시 양촌길 124-8')}`}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="bg-[#03C75A] text-white hover:brightness-105 active:scale-[0.99] px-6 py-3.5 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/5 cursor-pointer"
@@ -1051,7 +1050,7 @@ const AboutPage: React.FC = () => {
                       </p>
                       <p>
                         <strong className="text-slate-300 font-medium">• 자가용 이용 시:</strong><br />
-                        도로명 주소 '회안대로 980' 검색, 건물 뒤편 주차 공간 이용 가능
+                        도로명 주소 '양촌길 124-8' 검색, 건물 주차 공간 이용 가능
                       </p>
                     </div>
                   </div>

@@ -577,7 +577,7 @@ const NewsPage: React.FC = () => {
                     <span className="flex items-center gap-1.5"><Calendar className="w-3 h-3" /> {news.date}</span>
                   </div>
                   
-                  <h3 className="text-xl font-bold text-white group-hover:text-accent transition-colors leading-tight mb-4">
+                  <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-accent transition-colors leading-tight mb-4">
                     {news.title}
                   </h3>
                   

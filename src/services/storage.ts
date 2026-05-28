@@ -15,7 +15,21 @@ export const storage = {
   },
   getPosts: (): Post[] => {
     const saved = localStorage.getItem(POSTS_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_POSTS;
+    const posts: Post[] = saved ? JSON.parse(saved) : INITIAL_POSTS;
+    return posts.map(p => {
+      const defaultPost = INITIAL_POSTS.find(dp => dp.id === p.id);
+      if (defaultPost) {
+        return {
+          ...p,
+          title: defaultPost.title,
+          url: defaultPost.url,
+          imageUrl: defaultPost.imageUrl || p.imageUrl,
+          excerpt: defaultPost.excerpt || p.excerpt,
+          content: defaultPost.content || p.content
+        };
+      }
+      return p;
+    });
   },
   savePost: (post: Post) => {
     const posts = storage.getPosts();

@@ -105,48 +105,53 @@ const ActivityPage: React.FC = () => {
             아직 등록된 활동소식이 없습니다. 대시보드를 통해 첫 글을 게시할 수 있습니다.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {posts.map((post, idx) => (
-              <motion.article
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                onClick={() => setSelectedPost(post)}
-                className="group cursor-pointer flex flex-col h-full bg-[#0F0F0F]/60 border border-slate-900 rounded-3xl p-6 hover:border-accent/40 transition-all duration-300"
-              >
-                <div className="aspect-[16/10] overflow-hidden rounded-2xl mb-6 relative border border-slate-800 ring-1 ring-white/5 group-hover:ring-accent/50 transition-all duration-500">
-                  <img 
-                    src={post.imageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1000&auto=format&fit=crop"} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className="px-2.5 py-1 bg-accent/80 backdrop-blur-md rounded text-[10px] font-bold uppercase tracking-wider text-white">
-                      {post.category}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12 sm:gap-10 animate-fade-in">
+            {posts.map((post, idx) => {
+              const handleArticleClick = () => {
+                if (post.url) {
+                  window.open(post.url, '_blank', 'noopener,noreferrer');
+                } else {
+                  setSelectedPost(post);
+                }
+              };
+
+              return (
+                <motion.article
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  onClick={handleArticleClick}
+                  className="group cursor-pointer flex flex-col items-start h-full bg-transparent border-0 p-0 transition-all duration-300 pb-4"
+                >
+                  <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden mb-5 shrink-0 relative border border-transparent ring-1 ring-white/5 group-hover:border-accent group-hover:ring-4 group-hover:ring-accent/30 transition-all duration-300">
+                    <img 
+                      src={post.imageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1000&auto=format&fit=crop"} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex items-center gap-3 text-[10px] text-slate-500 uppercase tracking-widest">
+                      <span className="flex items-center gap-1 font-medium"><Calendar className="w-2.5 h-2.5" /> {post.date}</span>
+                      <span className="w-0.5 h-0.5 bg-slate-800 rounded-full" />
+                      <span className="font-medium">By {post.author}</span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-accent transition-colors leading-snug sm:leading-tight">
+                      {post.title}
+                    </h3>
+                    <p className="text-slate-400 text-xs sm:text-sm line-clamp-6 sm:line-clamp-none font-light leading-relaxed">
+                      {post.excerpt || post.content}
+                    </p>
+                  </div>
+                  <div className="hidden sm:block w-full mt-6 pt-4 border-t border-white/5">
+                    <span className="text-accent text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      자세히 보기 <ChevronRight className="w-3 h-3" />
                     </span>
                   </div>
-                </div>
-                <div className="flex-1 space-y-3">
-                  <div className="flex items-center gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
-                    <span className="flex items-center gap-1.5 font-medium"><Calendar className="w-3 h-3" /> {post.date}</span>
-                    <span className="w-1 h-1 bg-slate-800 rounded-full" />
-                    <span className="font-medium">By {post.author}</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-white group-hover:text-accent transition-colors leading-tight">
-                    {post.title}
-                  </h3>
-                  <p className="text-slate-400 text-sm line-clamp-3 font-light leading-relaxed">
-                    {post.excerpt || post.content}
-                  </p>
-                </div>
-                <div className="mt-6 pt-6 border-t border-white/5">
-                  <span className="text-accent text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    자세히 보기 <ChevronRight className="w-3 h-3" />
-                  </span>
-                </div>
-              </motion.article>
-            ))}
+                </motion.article>
+              );
+            })}
           </div>
         )}
       </div>

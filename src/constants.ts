@@ -11,7 +11,8 @@ export const INITIAL_SETTINGS: SiteSettings = {
     youtube: "https://www.youtube.com/@gjpp",
     instagram: "https://www.instagram.com/gjpp21",
     twitter: "https://x.com/gjpp4u",
-    naverBlog: "https://cafe.naver.com/gjpp2022"
+    naverBlog: "https://blog.naver.com/gjct21",
+    naverCafe: "https://cafe.naver.com/gjpp2022"
   },
   seoKeywords: "경기도 광주시민연대, 광주시민연대, 참여자치시민연대, 권력감시, 시민교육, 상생공동체",
   contactEmail: "gjpp4u@gmail.com",
@@ -29,29 +30,29 @@ export const INITIAL_POSTS: Post[] = [
     date: "2024-04-20",
     author: "관리자",
     imageUrl: "https://cdn.litt.ly/images/sTf7jd1Q5hsMa0O8seqfrnEnARV8FR7Z",
-    url: "https://cafe.naver.com/gjpp2022"
+    url: "https://blog.naver.com/gjct21/224251764110"
   },
   {
     id: "1",
-    title: "2026 광주시민연대 정기총회 개최 보고",
+    title: "2026 광주시민연대 정기총회 개최 안내",
     excerpt: "2026년 경기도 광주시민의 다각적 권익과 새로운 한 해 도약을 다짐하는 정기 총회가 안전하게 개최되었습니다.",
     content: "2026년 정기 총회 상세 내용입니다. 자치, 교육, 기후 등 시민들의 절절한 요구를 적극 기획에 조율하여 더 따사로운 광주를 만듭니다.",
     category: "공지사항",
     date: "2024-04-13",
     author: "관리자",
     imageUrl: "https://postfiles.pstatic.net/MjAyNjA0MDhfMiAg/MDAxNzc1NjAxMzk4OTQ5.t5fVguRy1vU6v1Qk6Hd-J4JISYvSgQFzYHxgguWuITcg.qfhLPB0a5OMGbkcj6oIhU-y_C2qgOfhXYBjOnnAcHzgg.PNG/2026_%EA%B4%91%EC%A3%BC%EC%8B%9C%EB%AF%BC%EC%97%B0%EB%8C%80_%EC%B4%9D%ED%9A%8C.png?type=w773",
-    url: "https://cafe.naver.com/gjpp2022"
+    url: "https://blog.naver.com/gjct21/224244740416"
   },
   {
     id: "2",
-    title: "“기억과 내일” 경기도 광주 시민/미래세대 민주 자치 시민교육",
+    title: "기억과 미래 인권 평화 시민교육",
     excerpt: "자치분권과 인권 평화의 가치를 미래 세대와 함께 풍성히 소통하는 교육 세미나 프로그램을 개막합니다.",
     content: "기억과 내일 시민교육 상세 내용입니다. 경기도 광주시 주민들의 거대 자치 감수성을 높이고 조화로운 역사 자산을 가꾸는 시간입니다.",
     category: "시민교육",
     date: "2024-04-15",
     author: "관리자",
     imageUrl: "https://cdn.litt.ly/images/RFD8lmckgdVLiJ4g6MQEvhiPPqOTJHHr",
-    url: "https://cafe.naver.com/gjpp2022"
+    url: "https://blog.naver.com/gjct21/224215148610"
   }
 ];
 

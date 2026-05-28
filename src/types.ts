@@ -25,6 +25,7 @@ export interface SiteSettings {
     twitter?: string;
     youtube?: string;
     naverBlog?: string;
+    naverCafe?: string;
   };
   donationUrl?: string;
   seoKeywords: string;

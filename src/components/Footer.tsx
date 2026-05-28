@@ -22,32 +22,71 @@ export default function Footer() {
           <p className="text-slate-500 text-xs leading-relaxed font-light italic">
             {settings.description}
           </p>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
             {settings.socialLinks.naverBlog && (
-              <a href={settings.socialLinks.naverBlog} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#03C75A] transition-colors flex items-center justify-center">
-                <div className="w-4 h-4 border border-current rounded-sm flex items-center justify-center leading-none">
-                  <span className="text-[9px] font-black italic">B</span>
-                </div>
+              <a 
+                href={settings.socialLinks.naverBlog} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-8 h-8 rounded-full bg-[#03C75A] hover:bg-[#02b350] transition-all flex items-center justify-center text-white font-black italic text-xs shadow-md hover:scale-110"
+                title="네이버 블로그"
+              >
+                B
+              </a>
+            )}
+            {settings.socialLinks.naverCafe && (
+              <a 
+                href={settings.socialLinks.naverCafe} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-8 h-8 rounded-full bg-[#2DB400] hover:bg-[#259900] transition-all flex items-center justify-center text-white font-black italic text-xs shadow-md hover:scale-110"
+                title="네이버 카페"
+              >
+                C
               </a>
             )}
             {settings.socialLinks.facebook && (
-              <a href={settings.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-accent transition-colors flex items-center justify-center">
-                <Facebook className="w-4 h-4" />
+              <a 
+                href={settings.socialLinks.facebook} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-8 h-8 rounded-full bg-[#1877F2] hover:bg-[#145dbd] transition-all flex items-center justify-center text-white shadow-md hover:scale-110"
+                title="페이스북"
+              >
+                <Facebook className="w-4 h-4 fill-white" />
               </a>
             )}
             {settings.socialLinks.youtube && (
-              <a href={settings.socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-accent transition-colors flex items-center justify-center">
-                <Youtube className="w-4 h-4" />
+              <a 
+                href={settings.socialLinks.youtube} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-8 h-8 rounded-full bg-[#FF0000] hover:bg-[#cc0000] transition-all flex items-center justify-center text-white shadow-md hover:scale-110"
+                title="유튜브"
+              >
+                <Youtube className="w-4 h-4 fill-white" />
               </a>
             )}
             {settings.socialLinks.instagram && (
-              <a href={settings.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-accent transition-colors flex items-center justify-center">
+              <a 
+                href={settings.socialLinks.instagram} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#F9CE34] via-[#EE2A7B] to-[#6228D7] hover:brightness-110 transition-all flex items-center justify-center text-white shadow-md hover:scale-110"
+                title="인스타그램"
+              >
                 <Instagram className="w-4 h-4" />
               </a>
             )}
             {settings.socialLinks.twitter && (
-              <a href={settings.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-accent transition-colors flex items-center justify-center">
-                <span className="text-[11px] font-bold leading-none">X</span>
+              <a 
+                href={settings.socialLinks.twitter} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-8 h-8 rounded-full bg-[#111111] border border-slate-755 hover:bg-[#222222] transition-all flex items-center justify-center text-white shadow-md hover:scale-110"
+                title="X (트위터)"
+              >
+                <span className="text-[11px] font-black font-sans leading-none">X</span>
               </a>
             )}
           </div>
@@ -76,7 +115,7 @@ export default function Footer() {
               <Phone className="w-3 h-3 text-accent" /> {settings.contactPhone}
             </li>
             <li className="flex items-start gap-2">
-              <MapPin className="w-3 h-3 text-accent shrink-0 mt-0.5" /> 경기 광주시 회안대로 980 / 3층(사무실)
+              <MapPin className="w-3 h-3 text-accent shrink-0 mt-0.5" /> 경기 광주시 양촌길 124-8
             </li>
           </ul>
         </div>
