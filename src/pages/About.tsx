@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, Shield, Gavel, ArrowLeft, Users, Layers, Calendar, MapPin, Copy, Check, Map, ExternalLink } from 'lucide-react';
+import { FileText, Shield, Gavel, ArrowLeft, Users, Layers, Calendar, MapPin, Copy, Check, Map, ExternalLink, Palette } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AboutPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'declaration' | 'statutes' | 'rules' | 'executives' | 'organization' | 'history' | 'location'>('declaration');
+  const [activeTab, setActiveTab] = useState<'declaration' | 'statutes' | 'rules' | 'executives' | 'organization' | 'ci' | 'history' | 'location'>('declaration');
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [activeMap, setActiveMap] = useState<'kakao' | 'google' | 'naver'>('google');
 
@@ -20,6 +20,7 @@ const AboutPage: React.FC = () => {
     { id: 'rules', name: '규칙', icon: <Gavel className="w-4 h-4" /> },
     { id: 'executives', name: '임원소개', icon: <Users className="w-4 h-4" /> },
     { id: 'organization', name: '실행조직', icon: <Layers className="w-4 h-4" /> },
+    { id: 'ci', name: 'CI소개', icon: <Palette className="w-4 h-4" /> },
     { id: 'history', name: '연혁', icon: <Calendar className="w-4 h-4" /> },
     { id: 'location', name: '오시는길', icon: <MapPin className="w-4 h-4" /> },
   ];
@@ -39,8 +40,8 @@ const AboutPage: React.FC = () => {
           </p>
         </header>
 
-        {/* Tab Navigation - Scrollable on mobile, beautiful spacing */}
-        <div className="flex overflow-x-auto md:flex-wrap gap-2 mb-6 border-b border-white/5 pb-4 md:pb-6 scrollbar-none -mx-6 px-6 md:mx-0 md:px-0">
+        {/* Tab Navigation - Wrapping nicely on mobile without scrolling */}
+        <div className="flex flex-wrap gap-2 mb-6 border-b border-white/5 pb-4 md:pb-6 mx-0 px-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -184,6 +185,54 @@ const AboutPage: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'ci' && (
+              <motion.div
+                key="ci"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6 sm:space-y-8"
+              >
+                <div className="text-center mb-6 sm:mb-8">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">CI 소개</h2>
+                  <div className="w-12 h-1 bg-accent mx-auto rounded-full" />
+                </div>
+
+                <div className="flex flex-col items-center justify-center space-y-6 bg-[#0F0F0F]/60 border border-slate-900 p-6 sm:p-12 rounded-3xl">
+                  {/* CI Logo Display styled with clean corporate feel */}
+                  <div className="bg-white rounded-2xl p-6 sm:p-10 border border-white/10 max-w-sm w-full shadow-2xl flex items-center justify-center">
+                    <img 
+                      src="https://postfiles.pstatic.net/MjAyNjA1MjJfMTAg/MDAxNzc5NDQxODc1MDA2.nW_uKcVcDfKX2ulMGsz0wCpxcVLKxHpQcjmTaDzOmnog.JywPAhgtR07FKPMq5hiLLP8CQXbGli78WpKxxkXpawkg.PNG/%EA%B4%91%EC%A3%BC%EC%8B%9C%EB%AF%BC%EC%97%B0%EB%8C%80%EB%A1%9C%EA%B3%A0.png?type=w773" 
+                      alt="광주시민연대 CI 로고" 
+                      className="max-h-36 sm:max-h-44 object-contain"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+
+                  {/* Descriptions */}
+                  <div className="w-full space-y-6 text-center max-w-xl">
+                    <p className="text-slate-200 text-sm sm:text-base leading-relaxed font-light">
+                      (이 로고 디자인은 소수의 시민이 함께 한 방향을 향해 걸어가는 사람의 모습을 시각화한 것으로 더 푸른 시민 운동이 전진하고 확장되는 모습을 담았습니다.)
+                    </p>
+
+                    <div className="pt-6 border-t border-white/5 space-y-2">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Logo Creator / 제작자</p>
+                      <p className="text-[15px] font-bold text-white">
+                        고 추응식 교수
+                      </p>
+                      <p className="text-[11px] text-slate-400 font-light leading-relaxed">
+                        (전 신구대 교수, 시각디자인학과장, 전 사회적협동조합 착한장터 이사장)
+                      </p>
+                    </div>
+
+                    <div className="pt-4 text-xs font-semibold text-accent/90 tracking-wide bg-accent/5 py-3.5 px-4 rounded-xl border border-accent/10">
+                      “이 로고를 디자인 해주신 고 추응식 교수님께 감사드립니다.”
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
