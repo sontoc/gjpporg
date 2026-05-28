@@ -1,17 +1,43 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, Shield, Gavel, ArrowLeft, Users, Layers, Calendar, MapPin, Copy, Check, Map, ExternalLink, Palette } from 'lucide-react';
+import { FileText, Shield, Gavel, ArrowLeft, Users, Layers, Calendar, MapPin, Copy, Check, Map, ExternalLink, Palette, Download, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AboutPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'declaration' | 'statutes' | 'rules' | 'executives' | 'organization' | 'ci' | 'history' | 'location'>('declaration');
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [activeMap, setActiveMap] = useState<'kakao' | 'google' | 'naver'>('google');
+  const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText("경기 광주시 양촌길 124-8(3층)");
     setCopiedAddress(true);
     setTimeout(() => setCopiedAddress(false), 2000);
+  };
+
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) throw new Error('CORS fetch failed');
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      // Direct link fallback if CORS blocks direct blob download
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const tabs = [
@@ -122,7 +148,6 @@ const AboutPage: React.FC = () => {
                 </div>
               </motion.div>
             )}
-
             {activeTab === 'executives' && (
               <motion.div
                 key="executives"
@@ -203,20 +228,72 @@ const AboutPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col items-center justify-center space-y-6 bg-[#0F0F0F]/60 border border-slate-900 p-6 sm:p-12 rounded-3xl">
-                  {/* CI Logo Display styled with clean corporate feel */}
-                  <div className="bg-white rounded-2xl p-6 sm:p-10 border border-white/10 max-w-sm w-full shadow-2xl flex items-center justify-center">
-                    <img 
-                      src="https://postfiles.pstatic.net/MjAyNjA1MjJfMTAg/MDAxNzc5NDQxODc1MDA2.nW_uKcVcDfKX2ulMGsz0wCpxcVLKxHpQcjmTaDzOmnog.JywPAhgtR07FKPMq5hiLLP8CQXbGli78WpKxxkXpawkg.PNG/%EA%B4%91%EC%A3%BC%EC%8B%9C%EB%AF%BC%EC%97%B0%EB%8C%80%EB%A1%9C%EA%B3%A0.png?type=w773" 
-                      alt="광주시민연대 CI 로고" 
-                      className="max-h-36 sm:max-h-44 object-contain"
-                      referrerPolicy="no-referrer"
-                    />
+                  {/* CI Images Grid Display with hover ring glow */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl">
+                    <div 
+                      onClick={() => setSelectedImage({
+                        src: "https://postfiles.pstatic.net/MjAyNjA1MjhfMjQy/MDAxNzc5OTc0ODE3OTA2.k9EiF1wjYH5FmhK_rvlni7iNEkXKLAy_jKxPMEyp3vcg.HCVlggad--d-8178WsQhIpbUkvA1r6rOsvl_t_L_MpYg.JPEG/KakaoTalk_20260528_222459825.jpg?type=w3840",
+                        alt: '광주시민연대 CI 소개 이미지 1'
+                      })}
+                      className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-transparent ring-1 ring-white/10 hover:border-accent hover:ring-4 hover:ring-accent/40 hover:shadow-[0_0_30px_var(--accent-color,#A855F7)] hover:scale-[1.03] transition-all duration-300 shadow-2xl flex items-center justify-center cursor-pointer overflow-hidden group"
+                    >
+                      <img 
+                        src="https://postfiles.pstatic.net/MjAyNjA1MjhfMjQy/MDAxNzc5OTc0ODE3OTA2.k9EiF1wjYH5FmhK_rvlni7iNEkXKLAy_jKxPMEyp3vcg.HCVlggad--d-8178WsQhIpbUkvA1r6rOsvl_t_L_MpYg.JPEG/KakaoTalk_20260528_222459825.jpg?type=w3840" 
+                        alt="광주시민연대 CI 소개 이미지 1" 
+                        className="max-h-60 object-contain rounded-lg transition-transform duration-300 group-hover:scale-102"
+                        style={{ clipPath: 'inset(5px)' }}
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div 
+                      onClick={() => setSelectedImage({
+                        src: "https://postfiles.pstatic.net/MjAyNjA1MjhfMTYz/MDAxNzc5OTc0ODE3ODk4.9YVNYlIVXTUTT2F-QZy_88KPlsXS1V06vYq8ckf33xIg.L_JOnTgopMhlnI8OQW2Gp8uPZUW2GEuwtgppKidZvFgg.JPEG/KakaoTalk_20260528_222459825_01.jpg?type=w386",
+                        alt: '광주시민연대 CI 소개 이미지 2'
+                      })}
+                      className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-transparent ring-1 ring-white/10 hover:border-accent hover:ring-4 hover:ring-accent/40 hover:shadow-[0_0_30px_var(--accent-color,#A855F7)] hover:scale-[1.03] transition-all duration-300 shadow-2xl flex items-center justify-center cursor-pointer overflow-hidden group"
+                    >
+                      <img 
+                        src="https://postfiles.pstatic.net/MjAyNjA1MjhfMTYz/MDAxNzc5OTc0ODE3ODk4.9YVNYlIVXTUTT2F-QZy_88KPlsXS1V06vYq8ckf33xIg.L_JOnTgopMhlnI8OQW2Gp8uPZUW2GEuwtgppKidZvFgg.JPEG/KakaoTalk_20260528_222459825_01.jpg?type=w386" 
+                        alt="광주시민연대 CI 소개 이미지 2" 
+                        className="max-h-60 object-contain rounded-lg transition-transform duration-300 group-hover:scale-102"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div 
+                      onClick={() => setSelectedImage({
+                        src: "https://postfiles.pstatic.net/MjAyNjA1MjhfMjMg/MDAxNzc5OTc0ODE3ODk4.EA3BW1dRIpDDX0lgK-SfO8v6ASf0Ju8kqmpuGZsD-1Ig.uHb4IZbv3I5arjuxcl-UEOyoB2JNJp_2VQw29VzOjqQg.JPEG/KakaoTalk_20260528_222459825_02.jpg?type=w3840",
+                        alt: '광주시민연대 CI 소개 이미지 3'
+                      })}
+                      className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-transparent ring-1 ring-white/10 hover:border-accent hover:ring-4 hover:ring-accent/40 hover:shadow-[0_0_30px_var(--accent-color,#A855F7)] hover:scale-[1.03] transition-all duration-300 shadow-2xl flex items-center justify-center cursor-pointer overflow-hidden group"
+                    >
+                      <img 
+                        src="https://postfiles.pstatic.net/MjAyNjA1MjhfMjMg/MDAxNzc5OTc0ODE3ODk4.EA3BW1dRIpDDX0lgK-SfO8v6ASf0Ju8kqmpuGZsD-1Ig.uHb4IZbv3I5arjuxcl-UEOyoB2JNJp_2VQw29VzOjqQg.JPEG/KakaoTalk_20260528_222459825_02.jpg?type=w3840" 
+                        alt="광주시민연대 CI 소개 이미지 3" 
+                        className="max-h-60 object-contain rounded-lg transition-transform duration-300 group-hover:scale-102"
+                        style={{ clipPath: 'inset(5px)' }}
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div 
+                      onClick={() => setSelectedImage({
+                        src: "https://postfiles.pstatic.net/MjAyNjA1MjhfMjQ2/MDAxNzc5OTc0ODE3OTI2.R4XPZ7en7T-Bs_aoNpdkHUj-yIQgEN-O3c9VoV6PzVgg.xXyPFLznOINNrKerhWdh7r7PkGWF-7CsWGa7ZkHgKDwg.JPEG/KakaoTalk_20260528_222459825_03.jpg?type=w386",
+                        alt: '광주시민연대 CI 소개 이미지 4'
+                      })}
+                      className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-transparent ring-1 ring-white/10 hover:border-accent hover:ring-4 hover:ring-accent/40 hover:shadow-[0_0_30px_var(--accent-color,#A855F7)] hover:scale-[1.03] transition-all duration-300 shadow-2xl flex items-center justify-center cursor-pointer overflow-hidden group"
+                    >
+                      <img 
+                        src="https://postfiles.pstatic.net/MjAyNjA1MjhfMjQ2/MDAxNzc5OTc0ODE3OTI2.R4XPZ7en7T-Bs_aoNpdkHUj-yIQgEN-O3c9VoV6PzVgg.xXyPFLznOINNrKerhWdh7r7PkGWF-7CsWGa7ZkHgKDwg.JPEG/KakaoTalk_20260528_222459825_03.jpg?type=w386" 
+                        alt="광주시민연대 CI 소개 이미지 4" 
+                        className="max-h-60 object-contain rounded-lg transition-transform duration-300 group-hover:scale-102"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
                   </div>
 
                   {/* Descriptions */}
                   <div className="w-full space-y-6 text-center max-w-xl">
                     <p className="text-slate-200 text-sm sm:text-base leading-relaxed font-light">
-                      (이 로고 디자인은 소수의 시민이 함께 한 방향을 향해 걸어가는 사람의 모습을 시각화한 것으로 더 푸른 시민 운동이 전진하고 확장되는 모습을 담았습니다.)
+                      (이 로고 디자인은 소수의 시민이 함께 한 방향을 향해 걸어가는 사람의 모습을 시각화한 것으로 푸르고 푸른 시민 운동이 전진하고 확장되는 모습을 담았습니다.)
                     </p>
 
                     <div className="pt-6 border-t border-white/5 space-y-2">
@@ -230,7 +307,7 @@ const AboutPage: React.FC = () => {
                     </div>
 
                     <div className="pt-4 text-xs font-semibold text-accent/90 tracking-wide bg-accent/5 py-3.5 px-4 rounded-xl border border-accent/10">
-                      “이 로고를 디자인 해주신 고 추응식 교수님께 감사드립니다.”
+                      “평생 풀뿌리 민주주의의 가치를 꿈꾸시며 이 로고를 디자인해주신 고(故) 추응식 교수님께 깊은 감사와 존경의 마음을 전합니다.”
                     </div>
                   </div>
                 </div>
@@ -1104,6 +1181,80 @@ const AboutPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Image Lightbox Modal */}
+          <AnimatePresence>
+            {selectedImage && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+                onClick={() => setSelectedImage(null)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.95, y: 20 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                  className="relative max-w-4xl w-full bg-[#161616] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center gap-6"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setSelectedImage(null)}
+                    className="absolute top-4 right-4 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 p-2.5 rounded-full transition-colors cursor-pointer"
+                    title="닫기"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+
+                  {/* Modal Header */}
+                  <div className="text-center w-full px-8">
+                    <h3 className="text-lg md:text-xl font-bold text-white mb-1">
+                      {selectedImage.alt}
+                    </h3>
+                    <p className="text-xs text-slate-400 font-light">
+                      클릭하여 닫거나 아래 버튼으로 원본 이미지를 다운로드 하실 수 있습니다.
+                    </p>
+                  </div>
+
+                  {/* Large Image Preview */}
+                  <div className="bg-white p-6 rounded-2xl border border-white/5 shadow-inner max-h-[60vh] overflow-auto flex items-center justify-center">
+                    <img
+                      src={selectedImage.src}
+                      alt={selectedImage.alt}
+                      className="max-h-[50vh] object-contain rounded-lg shadow-md"
+                      style={
+                        selectedImage.src.includes('222459825.jpg') || selectedImage.src.includes('222459825_02.jpg')
+                          ? { clipPath: 'inset(5px)' }
+                          : undefined
+                      }
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <button
+                      onClick={() => handleDownload(selectedImage.src, `${selectedImage.alt}.jpg`)}
+                      className="flex items-center justify-center gap-2 px-6 py-3 bg-accent hover:brightness-110 active:scale-98 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-accent/20 cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      원본 이미지 다운로드
+                    </button>
+                    
+                    <button
+                      onClick={() => setSelectedImage(null)}
+                      className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-xl text-sm transition-all cursor-pointer"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
