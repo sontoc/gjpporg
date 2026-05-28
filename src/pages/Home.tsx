@@ -408,7 +408,7 @@ export default function Home() {
                     <span className="px-2 py-0.5 bg-slate-800 rounded text-[10px] font-bold text-accent uppercase tracking-widest">{item.source}</span>
                     <span className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">{item.date}</span>
                   </div>
-                  <h3 className="text-xl font-bold text-white group-hover:text-accent transition-colors leading-tight mb-4">
+                  <h3 className="text-base font-bold text-white group-hover:text-accent transition-colors leading-snug mb-4">
                     {item.title}
                   </h3>
                 </div>
