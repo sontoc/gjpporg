@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Calendar, ChevronRight, ArrowLeft, Loader2, PenTool } from 'lucide-react';
+import { Calendar, ChevronRight, ArrowLeft, Loader2, PenTool, Compass } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { storage } from '../services/storage';
 import { supabase } from '../lib/supabase';
@@ -70,17 +70,22 @@ const ActivityPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pt-24 pb-20 px-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#0A0A0A] pt-24 pb-20 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
         <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-accent mb-8 transition-colors group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           <span className="text-sm font-medium">홈으로 돌아가기</span>
         </Link>
         
         <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">활동소식</h1>
-            <p className="text-slate-400 text-lg font-light leading-relaxed max-w-2xl mt-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-accent shrink-0">
+                <Compass className="w-5 h-5" />
+              </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">활동소식</h1>
+            </div>
+            <p className="text-slate-400 text-lg font-light leading-relaxed max-w-2xl">
               {settings.name}의 모든 활동과 현장의 목소리를 기록합니다. 시민의 참여로 만들어가는 소중한 소식들입니다.
             </p>
           </div>

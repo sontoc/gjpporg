@@ -10,7 +10,7 @@ const AboutPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText("경기 광주시 양촌길 124-8(3층)");
+    navigator.clipboard.writeText("경기도 광주시 오포읍 양촌길 124-8");
     setCopiedAddress(true);
     setTimeout(() => setCopiedAddress(false), 2000);
   };
@@ -52,15 +52,20 @@ const AboutPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] pt-24 pb-20 px-2 sm:px-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#0F0F0F] pt-24 pb-20 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
         <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-accent mb-8 transition-colors group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           <span className="text-sm font-medium">홈으로 돌아가기</span>
         </Link>
 
         <header className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">단체소개</h1>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-accent shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">단체소개</h1>
+          </div>
           <p className="text-slate-400 text-lg font-light leading-relaxed">
             광주참여자치시민연대의 근간이 되는 창립 가치와 운영 원칙을 소개합니다.
           </p>
@@ -1025,7 +1030,7 @@ const AboutPage: React.FC = () => {
                     <span className="text-[10px] uppercase font-bold tracking-widest text-accent">Office Location</span>
                     <h4 className="text-lg font-bold text-white">사무국 주소</h4>
                     <p className="text-slate-400 font-light text-sm">
-                      경기 광주시 양촌길 124-8(3층)
+                      경기도 광주시 오포읍 양촌길 124-8
                     </p>
                   </div>
                   <button 
@@ -1154,12 +1159,12 @@ const AboutPage: React.FC = () => {
                       </div>
                       <h4 className="font-bold text-white text-sm">대중교통 (버스)</h4>
                     </div>
-                    <div className="text-slate-400 text-xs font-light space-y-2 leading-relaxed">
+                    <div className="text-slate-400 text-xs font-light space-y-2.5 leading-relaxed">
                       <p>
-                        <strong className="text-slate-300 font-medium">[밀목.광주시청삼거리] 정류장 하차</strong> (도보 2분)
+                        <strong className="text-slate-300 font-medium">[양촌마을.양촌현대아파트] 정류장 하차</strong> (도보 3분)
                       </p>
-                      <p>• 간선/일반 버스: 32, 320, 660, 31-3, 33-2</p>
-                      <p>• 광역 버스: 1113-1, 1113-2, 500-1</p>
+                      <p>• 일반 버스: 20, 60, 119, 3-1, 17, 17-1</p>
+                      <p>• 광역/급행 버스: 1117, 1113-1 (양촌리 또는 하차 후 도보 연계)</p>
                     </div>
                   </div>
                   <div className="bg-slate-900/10 p-6 rounded-2xl border border-white/5 space-y-4">
@@ -1169,14 +1174,18 @@ const AboutPage: React.FC = () => {
                       </div>
                       <h4 className="font-bold text-white text-sm">지하철 연계 및 자차</h4>
                     </div>
-                    <div className="text-slate-400 text-xs font-light space-y-2 leading-relaxed">
+                    <div className="text-slate-400 text-xs font-light space-y-2.5 leading-relaxed">
                       <p>
                         <strong className="text-slate-300 font-medium">• 경강선 경기광주역 이용 시:</strong><br />
-                        경기광주역에서 버스로 환승하여 약 10분 소요 (시청 방면 버스 탑승)
+                        경기광주역 1번 출구 정류장에서 일반버스 20, 60, 3-1, 17, 17-1번 등으로 환승하여 양촌마을 정류장에서 하차 (약 10~15분 소요)
+                      </p>
+                      <p>
+                        <strong className="text-slate-300 font-medium">• 경강선 초월역 이용 시:</strong><br />
+                        초월역 버스 정류장에서 버스 환승 후 양촌마을 정류장에서 하차 (약 15분 소요)
                       </p>
                       <p>
                         <strong className="text-slate-300 font-medium">• 자가용 이용 시:</strong><br />
-                        도로명 주소 '양촌길 124-8' 검색, 건물 주차 공간 이용 가능
+                        네비게이션에 도로명 주소 '경기도 광주시 오포읍 양촌길 124-8' 또는 '양촌현대아파트' 검색, 건물 전용 주차 공간 이용 가능
                       </p>
                     </div>
                   </div>

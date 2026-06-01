@@ -171,8 +171,8 @@ using (true);
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pt-24 pb-20 px-6 text-slate-200">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#0A0A0A] pt-24 pb-20 px-4 sm:px-6 lg:px-8 text-slate-200">
+      <div className="max-w-6xl mx-auto">
         <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-accent mb-8 transition-colors group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           <span className="text-sm font-medium">홈으로 돌아가기</span>
@@ -187,7 +187,7 @@ using (true);
           >
             <Heart className="w-8 h-8 fill-current animate-pulse text-accent" />
           </motion.div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">회원가입 및 후원</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-4">회원가입 및 후원</h1>
           <p className="text-slate-400 text-base md:text-lg font-light leading-relaxed max-w-xl mx-auto">
             정부 보조금 없이 오직 시민의 후원으로만 투명하게 운영됩니다.<br />
             정의롭고 따뜻한 광주 공동체를 위한 소중한 첫걸음이 되어 주세요.

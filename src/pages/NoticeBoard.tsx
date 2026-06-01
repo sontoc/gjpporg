@@ -251,8 +251,8 @@ const NoticeBoard: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pt-24 pb-20 px-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[#0A0A0A] pt-24 pb-20 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
         <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-accent mb-8 transition-colors group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           <span className="text-sm font-medium">홈으로 돌아가기</span>
@@ -264,7 +264,7 @@ const NoticeBoard: React.FC = () => {
               <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-accent">
                 <Bell className="w-5 h-5" />
               </div>
-              <h1 className="text-4xl font-bold text-white tracking-tight">공지사항</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">공지사항</h1>
             </div>
             <p className="text-slate-400 text-lg font-light max-w-xl">
               광주참여자치시민연대의 중요 소식과 안내를 <br />

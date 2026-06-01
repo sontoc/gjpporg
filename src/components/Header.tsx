@@ -26,19 +26,19 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#0F0F0F]/80 backdrop-blur-md border-b border-slate-800">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="px-2.5 h-8 bg-accent rounded-lg flex items-center justify-center font-bold text-white group-hover:scale-110 group-hover:rotate-3 transition-all text-xs shadow-lg shadow-accent/20 tracking-wider">ㅅㅅㅅ</div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 group flex-nowrap shrink-0">
+          <div className="px-2.5 h-8 bg-accent rounded-lg flex items-center justify-center font-bold text-white group-hover:scale-110 group-hover:rotate-3 transition-all text-xs shadow-lg shadow-accent/20 tracking-wider whitespace-nowrap shrink-0 select-none">ㅅㅅㅅ</div>
           <span className={cn(
-            "text-base md:text-lg font-bold tracking-tight text-white transition-opacity group-hover:opacity-80 flex items-center flex-wrap gap-1"
+            "flex flex-col justify-center items-start transition-opacity group-hover:opacity-80 gap-1"
           )}>
-            <span>광주시민연대</span>
-            <span className="text-slate-400 text-[10px] md:text-xs font-normal">(광주참여자치시민연대)</span>
+            <span className="text-xs sm:text-sm font-black tracking-[0.2em] text-white leading-none mr-[-0.2em]">광주시민연대</span>
+            <span className="text-slate-400 text-[8px] sm:text-[9.5px] font-light tracking-tight leading-none -ml-[2px]">{`(광주참여자치시민연대)`}</span>
           </span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-4 lg:gap-8 flex-nowrap whitespace-nowrap">
           {navItems.map((item) => (
             <Link
               key={item.path}

@@ -224,31 +224,39 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="max-w-4xl"
+            className="max-w-4xl relative -top-16 sm:-top-32 md:-top-44"
           >
-            <span className="inline-block px-3 py-1 rounded bg-accent/20 text-accent text-[10px] font-bold tracking-widest uppercase mb-6 border border-accent/30">
-              참여 민주주의, 광주의 미래
-            </span>
-            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tighter leading-[1.1] mb-8 text-white whitespace-pre-line">
+            <h1 className="text-xl md:text-3.5xl lg:text-4xl font-bold tracking-tighter leading-[1.1] mb-8 text-white whitespace-pre-line">
               {settings.homepageHeroTitle}
             </h1>
             <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed font-light max-w-2xl">
               {settings.homepageHeroSub}
             </p>
-            <div className="flex flex-wrap gap-4">
-              <Link 
-                to="/activity"
-                className="px-8 py-3.5 bg-accent text-white rounded font-bold hover:brightness-110 transition-all flex items-center gap-2 group text-sm"
-              >
-                활동 참여하기 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link 
-                to="/about"
-                className="px-8 py-3.5 bg-slate-800/50 backdrop-blur-md text-white rounded font-bold hover:bg-slate-800 transition-all border border-slate-700 text-sm"
-              >
-                단체 소개 보기
-              </Link>
-            </div>
+          </motion.div>
+        </div>
+
+        {/* Action Buttons in the lower 1/3 portion of the Hero section */}
+        <div className="absolute bottom-[25%] sm:bottom-[28%] md:bottom-[32%] left-1/2 -translate-x-1/2 w-full max-w-7xl px-10 z-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+            className="flex flex-wrap gap-4"
+          >
+            <Link 
+              to="/activity"
+              id="hero-btn-activity"
+              className="px-8 py-3.5 bg-accent text-white rounded font-bold hover:brightness-110 transition-all flex items-center gap-2 group text-sm shadow-xl shadow-accent/20"
+            >
+              활동 참여하기 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link 
+              to="/about"
+              id="hero-btn-about"
+              className="px-8 py-3.5 bg-slate-800/60 backdrop-blur-md text-white rounded font-bold hover:bg-slate-800 transition-all border border-slate-700 text-sm shadow-xl shadow-black/30"
+            >
+              단체 소개 보기
+            </Link>
           </motion.div>
         </div>
         
