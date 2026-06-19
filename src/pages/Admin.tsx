@@ -18,16 +18,21 @@ import {
   TableProperties,
   AlertCircle,
   Loader2,
-  Info
+  Info,
+  Calendar,
+  Users,
+  Flame
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { Post, SiteSettings } from '../types';
 import { cn } from '../lib/utils';
 import { TransparentLogo } from '../components/TransparentLogo';
 import { supabase } from '../lib/supabase';
+import { eventService, Event, Rsvp } from '../services/events';
+import { auth } from '../lib/firebase';
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = React.useState<'stats' | 'posts' | 'settings' | 'applications'>('posts');
+  const [activeTab, setActiveTab] = React.useState<'stats' | 'posts' | 'settings' | 'applications' | 'events'>('posts');
   const [posts, setPosts] = React.useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = React.useState(false);
   const [postsError, setPostsError] = React.useState<'table_not_found' | string | null>(null);
@@ -41,6 +46,90 @@ export default function Admin() {
   const [appLoading, setAppLoading] = React.useState(false);
   const [appError, setAppError] = React.useState<'table_not_found' | string | null>(null);
   const [selectedApp, setSelectedApp] = React.useState<any>(null);
+
+  // Events & Campaigns States
+  const [events, setEvents] = React.useState<Event[]>([]);
+  const [eventsLoading, setEventsLoading] = React.useState(false);
+  const [editingEvent, setEditingEvent] = React.useState<Event | null>(null);
+
+  // RSVP States
+  const [selectedRsvpEvent, setSelectedRsvpEvent] = React.useState<Event | null>(null);
+  const [rsvps, setRsvps] = React.useState<Rsvp[]>([]);
+  const [rsvpsLoading, setRsvpsLoading] = React.useState(false);
+
+  const fetchEventsSub = async () => {
+    setEventsLoading(true);
+    try {
+      const data = await eventService.getEvents();
+      setEvents(data);
+    } catch (err) {
+      console.error('Error fetching events:', err);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  const fetchRsvpsSub = async (eventId: string) => {
+    setRsvpsLoading(true);
+    try {
+      const data = await eventService.getRsvps(eventId);
+      setRsvps(data);
+    } catch (err) {
+      console.error('Error fetching rsvps:', err);
+    } finally {
+      setRsvpsLoading(false);
+    }
+  };
+
+  const handleDeleteEvent = async (id: string) => {
+    if (!confirm('정말로 이 행사/캠페인을 완전히 삭제하시겠습니까? 등록된 모든 정보와 신청 내역(RSVP)의 Firebase 조회 권한이 소실될 수 있습니다.')) return;
+    try {
+      await eventService.deleteEvent(id);
+      triggerToast();
+      fetchEventsSub();
+    } catch (err: any) {
+      alert('삭제 중 오류: ' + err.message);
+    }
+  };
+
+  const handleSaveEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+
+    setEventsLoading(true);
+    try {
+      const isNew = !events.some(ev => ev.id === editingEvent.id);
+
+      const payload = {
+        title: editingEvent.title,
+        type: editingEvent.type,
+        description: editingEvent.description,
+        status: editingEvent.status,
+        startDate: editingEvent.startDate,
+        endDate: editingEvent.endDate,
+        time: editingEvent.time,
+        location: editingEvent.location,
+        imageUrl: editingEvent.imageUrl || '',
+        authorId: user?.uid || auth.currentUser?.uid || 'admin',
+        authorName: user?.email ? user.email.split('@')[0] : '관리자'
+      };
+
+      if (isNew) {
+        await eventService.createEvent(payload);
+      } else {
+        await eventService.updateEvent(editingEvent.id, payload);
+      }
+
+      triggerToast();
+      setEditingEvent(null);
+      fetchEventsSub();
+    } catch (err: any) {
+      console.error('Save event failed:', err);
+      alert('이벤트 저장에 실패했습니다: ' + err.message);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
 
   const fetchPosts = async () => {
     setPostsLoading(true);
@@ -97,9 +186,17 @@ export default function Admin() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setApplications(data || []);
+
+      // Merge local storage signups
+      const locals = JSON.parse(localStorage.getItem('local_membership_applications') || '[]');
+      setApplications([...locals, ...(data || [])]);
     } catch (err: any) {
       console.error('Error fetching from Supabase:', err);
+      
+      // Load local ones only as backup if Supabase call fails
+      const locals = JSON.parse(localStorage.getItem('local_membership_applications') || '[]');
+      setApplications(locals);
+
       if (
         err.code === '42P01' || 
         err.message?.includes('relation') || 
@@ -108,7 +205,7 @@ export default function Admin() {
       ) {
         setAppError('table_not_found');
       } else {
-        setAppError(err.message || 'Supabase에서 데이터를 불러오지 못했습니다.');
+        console.warn('Supabase fetch failed, operating in offline/local fallback mode.');
       }
     } finally {
       setAppLoading(false);
@@ -116,7 +213,22 @@ export default function Admin() {
   };
 
   const handleDeleteApplication = async (id: string) => {
-    if (!confirm('신청 내역을 삭제하시겠습니까? 관련 데이터가 Supabase에서 영구 삭제됩니다.')) return;
+    if (!confirm('신청 내역을 삭제하시겠습니까? 관련 데이터가 완전히 삭제됩니다.')) return;
+    
+    if (id.startsWith('local_')) {
+      // Local deletion
+      try {
+        const locals = JSON.parse(localStorage.getItem('local_membership_applications') || '[]');
+        const updated = locals.filter((app: any) => app.id !== id);
+        localStorage.setItem('local_membership_applications', JSON.stringify(updated));
+        triggerToast();
+        fetchApplications();
+      } catch (err: any) {
+        alert('삭제 중 오류 발생: ' + err.message);
+      }
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('membership_applications')
@@ -173,6 +285,8 @@ export default function Admin() {
       fetchPosts();
     } else if (activeTab === 'applications') {
       fetchApplications();
+    } else if (activeTab === 'events') {
+      fetchEventsSub();
     }
   }, [activeTab]);
 
@@ -363,6 +477,7 @@ export default function Admin() {
               {[
                 { id: 'stats', label: '대시보드', icon: BarChart3 },
                 { id: 'posts', label: '게시글 관리', icon: FileText },
+                { id: 'events', label: '캠페인/행사 관리', icon: Calendar },
                 { id: 'applications', label: '가입 신청서 (Supabase)', icon: Database },
                 { id: 'settings', label: '사이트 설정', icon: SettingsIcon },
               ].map((item) => (
@@ -414,6 +529,7 @@ export default function Admin() {
             <h1 className="text-2xl font-bold tracking-tight text-white uppercase">
               {activeTab === 'stats' && 'Dashboard'}
               {activeTab === 'posts' && 'Posts Management'}
+              {activeTab === 'events' && 'Events & Campaigns'}
               {activeTab === 'applications' && 'Supabase Applications'}
               {activeTab === 'settings' && 'Site Customization'}
             </h1>
@@ -435,6 +551,29 @@ export default function Admin() {
               className="px-6 py-2 bg-white text-black rounded font-bold flex items-center gap-2 hover:bg-slate-200 transition-colors text-xs"
             >
               <Plus className="w-4 h-4" /> 새 게시글 작성
+            </button>
+          )}
+          {activeTab === 'events' && !editingEvent && (
+            <button 
+              onClick={() => setEditingEvent({
+                id: 'event_new_' + Math.random().toString(36).substring(2, 10),
+                title: '',
+                type: 'campaign',
+                description: '',
+                status: 'active',
+                startDate: new Date().toISOString().split('T')[0],
+                endDate: new Date().toISOString().split('T')[0],
+                time: '',
+                location: '',
+                imageUrl: '',
+                authorId: auth.currentUser?.uid || 'admin',
+                authorName: '관리자',
+                createdAt: null,
+                updatedAt: null
+              })}
+              className="px-6 py-2 bg-accent text-white rounded font-bold flex items-center gap-2 hover:brightness-110 transition-all text-xs shadow-lg shadow-accent/20"
+            >
+              <Plus className="w-4 h-4" /> 새 캠페인/행사 생성
             </button>
           )}
         </header>
@@ -1032,6 +1171,357 @@ create policy "인증된 전체 셀렉트 허용" on membership_applications for
                         <span>원격 수집 일자</span>
                         <span>{selectedApp.created_at}</span>
                       </div>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {activeTab === 'events' && (
+          <div className="space-y-6">
+            {/* Upper Info Row */}
+            <div className="flex justify-between items-center bg-[#0F0F0F] border border-slate-805 p-6 rounded-2xl shadow-xl">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-accent" />
+                  캠페인 및 행사 일정 관리 (Firebase Firestore)
+                </h3>
+                <p className="text-slate-505 text-xs font-light mt-1">
+                  시민들이 접수할 수 있는 행동 캠페인 및 공익 이벤트를 기획하고, 온·오프라인 참여자 RSVP 명단을 관리합니다.
+                </p>
+              </div>
+              <button
+                onClick={fetchEventsSub}
+                disabled={eventsLoading}
+                className="px-3.5 py-2 bg-slate-850 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg flex items-center gap-2 text-xs font-medium transition-colors disabled:opacity-50 border border-slate-800"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5", eventsLoading && "animate-spin text-accent")} />
+                목록 새로고침
+              </button>
+            </div>
+
+            {eventsLoading && events.length === 0 ? (
+              <div className="py-24 bg-[#0F0F0F] border border-slate-800 rounded-2xl flex flex-col items-center justify-center text-slate-505 space-y-3">
+                <Loader2 className="w-8 h-8 animate-spin text-accent" />
+                <span className="text-xs font-light tracking-wide uppercase">이벤트 목록 로드 중...</span>
+              </div>
+            ) : events.length === 0 ? (
+              <div className="bg-[#0F0F0F] border border-slate-800 py-16 text-center rounded-2xl text-slate-505 font-light text-xs tracking-wider border-dashed border-slate-800">
+                현재 등록된 활성 캠페인 및 행사 정보가 없습니다. 상단에서 "새 캠페인/행사 생성" 단추를 클릭해 신규 작성해 보세요!
+              </div>
+            ) : (
+              <div className="bg-[#0F0F0F] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse font-sans">
+                    <thead className="bg-[#141414] text-[10px] uppercase tracking-wider text-slate-500 border-b border-slate-800/80">
+                      <tr>
+                        <th className="px-6 py-4">분류</th>
+                        <th className="px-6 py-4">제목</th>
+                        <th className="px-6 py-4">장소</th>
+                        <th className="px-6 py-4">행사 기간</th>
+                        <th className="px-6 py-4">진행 상태</th>
+                        <th className="px-6 py-4 text-center">동작</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50 text-xs text-slate-300">
+                      {events.map((event) => (
+                        <tr key={event.id} className="hover:bg-white/[0.01] transition-colors group">
+                          <td className="px-6 py-4">
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-[10px] font-bold border",
+                              event.type === 'campaign' 
+                                ? "bg-indigo-950/20 text-indigo-400 border-indigo-900/35"
+                                : "bg-purple-950/20 text-accent border-purple-900/35"
+                            )}>
+                              {event.type === 'campaign' ? '캠페인' : '행사'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-white truncate max-w-xs">{event.title}</p>
+                          </td>
+                          <td className="px-6 py-4 text-slate-400 max-w-[150px] truncate">{event.location}</td>
+                          <td className="px-6 py-4 text-slate-400 font-mono text-[11px]">
+                            {event.startDate} ~ {event.endDate}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-[10px] font-bold border",
+                              event.status === 'active' ? "bg-emerald-950/20 text-emerald-400 border-emerald-900/30" :
+                              event.status === 'scheduled' ? "bg-amber-950/20 text-amber-400 border-amber-900/25" :
+                              "bg-slate-900 text-slate-400 border-slate-800"
+                            )}>
+                              {event.status === 'active' ? '진행중' :
+                               event.status === 'scheduled' ? '대기' : '종료'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex justify-center items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={async () => {
+                                  setSelectedRsvpEvent(event);
+                                  await fetchRsvpsSub(event.id);
+                                }}
+                                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-accent rounded transition-colors flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+                                title="접수된 RSVP 명단 보기"
+                              >
+                                <Users className="w-3.5 h-3.5" />
+                                <span>신청 내역 명단</span>
+                              </button>
+                              <button
+                                onClick={() => setEditingEvent(event)}
+                                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded transition-colors"
+                                title="수정"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEvent(event.id)}
+                                className="p-1.5 bg-slate-800 hover:bg-red-950/20 text-slate-400 hover:text-red-450 rounded transition-colors"
+                                title="삭제"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Event Setup Form Modal */}
+            <AnimatePresence>
+              {editingEvent && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="relative w-full max-w-2xl bg-[#111111] border border-slate-800 rounded-3xl p-8 shadow-2xl overflow-y-auto max-h-[90vh]"
+                  >
+                    <div className="border-b border-slate-800 pb-5 mb-5 flex justify-between items-center">
+                      <h4 className="text-base font-bold text-white flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-accent" />
+                        {events.some(ev => ev.id === editingEvent.id) ? '캠페인 및 행사 정보 수정' : '새로운 캠페인 및 행사 등록'}
+                      </h4>
+                      <button
+                        onClick={() => setEditingEvent(null)}
+                        className="text-slate-400 hover:text-white text-xs border border-slate-850 hover:border-slate-800 px-3 py-1.5 rounded-lg"
+                      >
+                        닫기 ✕
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSaveEvent} className="space-y-5 text-xs text-slate-300 font-light font-sans">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-slate-500 font-medium">캠페인/행사 분류</label>
+                          <select
+                            value={editingEvent.type}
+                            onChange={(e) => setEditingEvent({ ...editingEvent, type: e.target.value as any })}
+                            className="w-full bg-[#181818] border border-slate-800 rounded-xl px-4 py-3 text-white text-xs focus:outline-none focus:border-accent"
+                          >
+                            <option value="campaign">캠페인 전용</option>
+                            <option value="event">행사 전용</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-slate-500 font-medium">진행 진행 상태</label>
+                          <select
+                            value={editingEvent.status}
+                            onChange={(e) => setEditingEvent({ ...editingEvent, status: e.target.value as any })}
+                            className="w-full bg-[#181818] border border-slate-800 rounded-xl px-4 py-3 text-white text-xs focus:outline-none focus:border-accent"
+                          >
+                            <option value="active">진행중 (Active)</option>
+                            <option value="scheduled">대기/예정중 (Scheduled)</option>
+                            <option value="completed">종료됨 (Completed)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] text-slate-500 font-medium font-bold">제목 *</label>
+                        <input
+                          type="text"
+                          required
+                          value={editingEvent.title}
+                          onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value })}
+                          placeholder="시민들과 함께하는 평화 행동 한마당 소통광장"
+                          className="w-full bg-[#181818] border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-light"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-slate-500 font-medium font-bold">시작일자 (YYYY-MM-DD) *</label>
+                          <input
+                            type="date"
+                            required
+                            value={editingEvent.startDate}
+                            onChange={(e) => setEditingEvent({ ...editingEvent, startDate: e.target.value })}
+                            className="w-full bg-[#181818] border border-slate-800 rounded-xl px-4 py-3 text-white text-xs focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-slate-500 font-medium font-bold">종료일자 (YYYY-MM-DD) *</label>
+                          <input
+                            type="date"
+                            required
+                            value={editingEvent.endDate}
+                            onChange={(e) => setEditingEvent({ ...editingEvent, endDate: e.target.value })}
+                            className="w-full bg-[#181818] border border-slate-800 rounded-xl px-4 py-3 text-white text-xs focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-slate-500 font-medium font-bold">행사 시간 내용 *</label>
+                          <input
+                            type="text"
+                            required
+                            value={editingEvent.time}
+                            onChange={(e) => setEditingEvent({ ...editingEvent, time: e.target.value })}
+                            placeholder="매주 토요일 오후 2시 - 5시"
+                            className="w-full bg-[#181818] border border-slate-800 rounded-xl px-4 py-3 text-white text-xs focus:outline-none focus:border-accent font-light"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-slate-500 font-medium font-bold">행사 장소 *</label>
+                          <input
+                            type="text"
+                            required
+                            value={editingEvent.location}
+                            onChange={(e) => setEditingEvent({ ...editingEvent, location: e.target.value })}
+                            placeholder="광주시민소통센터 2층 대강당 또는 온라인 Zoom"
+                            className="w-full bg-[#181818] border border-slate-800 rounded-xl px-4 py-3 text-white text-xs focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] text-slate-500 font-medium">대표 홍보 이미지 인터넷 URL 경로 (선택)</label>
+                        <input
+                          type="url"
+                          value={editingEvent.imageUrl || ''}
+                          onChange={(e) => setEditingEvent({ ...editingEvent, imageUrl: e.target.value })}
+                          placeholder="https://images.unsplash.com/photo-example-url..."
+                          className="w-full bg-[#181818] border border-slate-800 rounded-xl px-4 py-3 text-white text-xs focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] text-slate-500 font-medium font-bold font-sans">설명 및 본문 내용 *</label>
+                        <textarea
+                          required
+                          value={editingEvent.description}
+                          onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
+                          placeholder="행사의 상세 프로그램, 소요시간, 준비물 등 행사 전반에 관한 설명글을 기술해 주세요."
+                          rows={6}
+                          className="w-full bg-[#181818] border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-light resize-none font-sans"
+                        />
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setEditingEvent(null)}
+                          className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded font-bold text-xs hover:text-white transition-all text-slate-400"
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-6 py-2.5 bg-accent text-white rounded font-bold text-xs hover:brightness-110 active:scale-[0.98] transition-all font-sans"
+                        >
+                          이벤트 데이터 저장 반영
+                        </button>
+                      </div>
+                    </form>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
+            {/* RSVP Participant List Modal */}
+            <AnimatePresence>
+              {selectedRsvpEvent && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="relative w-full max-w-4xl bg-[#111111] border border-slate-800 rounded-3xl p-8 shadow-2xl flex flex-col max-h-[85vh]"
+                  >
+                    <div className="border-b border-slate-800 pb-5 mb-5 flex justify-between items-start">
+                      <div>
+                        <h4 className="text-base font-bold text-white flex items-center gap-2">
+                          <Users className="w-5 h-5 text-accent" />
+                          [{selectedRsvpEvent.title}] 신청인 명단 장부
+                        </h4>
+                        <p className="text-slate-500 text-xs font-light mt-0.5">
+                          본 캠페인에 등록 접수된 참가자들의 실시간 장부 정보입니다 (총 {rsvps.length}명 대기).
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedRsvpEvent(null)}
+                        className="text-slate-400 hover:text-white text-xs border border-slate-800 rounded-md px-3 py-1.5 hover:bg-slate-800"
+                      >
+                        장부 닫기
+                      </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-4">
+                      {rsvpsLoading ? (
+                        <div className="py-12 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="w-6 h-6 animate-spin text-accent" />
+                          <span className="text-xs">RSVP 참여자 목록 조회 중...</span>
+                        </div>
+                      ) : rsvps.length === 0 ? (
+                        <div className="py-16 text-center text-slate-500 font-light text-xs bg-[#090909] border border-slate-900 rounded-2xl">
+                          본 행사/캠페인에 등록된 온라인 신청자가 아직 존재하지 않습니다.
+                        </div>
+                      ) : (
+                        <div className="border border-slate-850 rounded-2xl overflow-hidden bg-[#0D0D0D]">
+                          <table className="w-full text-left border-collapse font-sans">
+                            <thead className="bg-[#141414] text-[10px] uppercase text-slate-500 tracking-wider border-b border-slate-850">
+                              <tr>
+                                <th className="px-5 py-3">신청자명</th>
+                                <th className="px-5 py-3">휴대폰</th>
+                                <th className="px-5 py-3">이메일</th>
+                                <th className="px-5 py-3">신청 메시지(한마디)</th>
+                                <th className="px-5 py-3">접수 시각</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-850 text-xs font-light text-slate-300">
+                              {rsvps.map((rsvp, idx) => (
+                                <tr key={rsvp.id || idx} className="hover:bg-white/[0.01]">
+                                  <td className="px-5 py-3 text-white font-semibold">{rsvp.name}</td>
+                                  <td className="px-5 py-3 text-slate-400 font-mono">{rsvp.phone}</td>
+                                  <td className="px-5 py-3 text-slate-400 font-mono">{rsvp.email}</td>
+                                  <td className="px-5 py-3 text-slate-300 italic max-w-xs truncate" title={rsvp.message}>
+                                    {rsvp.message || '-'}
+                                  </td>
+                                  <td className="px-5 py-3 text-slate-500 font-mono text-[10px]">
+                                    {rsvp.createdAt ? (rsvp.createdAt.seconds 
+                                      ? new Date(rsvp.createdAt.seconds * 1000).toLocaleDateString('ko-KR', {
+                                          year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+                                        }) 
+                                      : new Date(rsvp.createdAt).toDateString()) : '-'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 </div>

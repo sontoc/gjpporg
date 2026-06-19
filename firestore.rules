@@ -24,7 +24,12 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == 'sonfrom@gmail.com' || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      return isSignedIn() && (
+        request.auth.token.email == 'sonfrom@gmail.com' || 
+        request.auth.token.email == 'son3u@daum.net' || 
+        request.auth.token.email == 'gjpp4u@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
     }
 
     // --- Post Validation ---
@@ -64,6 +69,36 @@ service cloud.firestore {
              data.authorId is string && data.authorId == request.auth.uid &&
              data.createdAt is timestamp &&
              data.updatedAt == request.time;
+    }
+
+    // --- Event Validation ---
+    function isValidEvent(data) {
+      return data.keys().hasAll(['title', 'type', 'description', 'status', 'startDate', 'endDate', 'time', 'location', 'authorId', 'authorName', 'createdAt', 'updatedAt']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.type is string && (data.type == 'event' || data.type == 'campaign') &&
+             data.description is string && data.description.size() <= 20000 &&
+             data.status is string && (data.status == 'scheduled' || data.status == 'active' || data.status == 'completed') &&
+             data.startDate is string && data.startDate.size() <= 20 &&
+             data.endDate is string && data.endDate.size() <= 20 &&
+             data.time is string && data.time.size() <= 200 &&
+             data.location is string && data.location.size() <= 300 &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 1000)) &&
+             data.authorId is string && data.authorId == request.auth.uid &&
+             data.authorName is string && data.authorName.size() <= 100 &&
+             data.createdAt is timestamp &&
+             data.updatedAt == request.time;
+    }
+
+    // --- RSVP Validation ---
+    function isValidRsvp(data, eventId) {
+      return data.keys().hasAll(['eventId', 'name', 'phone', 'email', 'createdAt']) &&
+             data.eventId is string && data.eventId == eventId &&
+             data.name is string && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() <= 50 &&
+             data.email is string && data.email.size() <= 150 &&
+             (!('message' in data) || (data.message is string && data.message.size() <= 1000)) &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+             data.createdAt is timestamp;
     }
 
     match /posts/{postId} {
@@ -119,6 +154,38 @@ service cloud.firestore {
                       );
                       
       allow delete: if isAdmin() && isValidId(videoId);
+    }
+
+    // --- Events & Campaigns ---
+    match /events/{eventId} {
+      allow get: if isValidId(eventId);
+      allow list: if true;
+
+      allow create: if isAdmin() && isValidId(eventId) &&
+                      incoming().createdAt == request.time &&
+                      isValidEvent(incoming());
+
+      allow update: if isAdmin() && isValidId(eventId) &&
+                      incoming().authorId == existing().authorId &&
+                      incoming().createdAt == existing().createdAt &&
+                      isValidEvent(incoming()) && (
+                        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'type', 'description', 'status', 'startDate', 'endDate', 'time', 'location', 'imageUrl', 'updatedAt'])
+                      );
+
+      allow delete: if isAdmin() && isValidId(eventId);
+
+      // --- RSVPs Subcollection ---
+      match /rsvps/{rsvpId} {
+        allow get: if isValidId(rsvpId) && (isAdmin() || (isSignedIn() && existing().userId == request.auth.uid));
+        allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+
+        allow create: if isValidId(rsvpId) &&
+                        incoming().createdAt == request.time &&
+                        isValidRsvp(incoming(), eventId);
+
+        // RSVPs are typically immutable after registration, but if needed, owner/admin can delete
+        allow delete: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+      }
     }
   }
 }

@@ -125,3 +125,38 @@ id: "v-live-1",
   }
 ];
 
+export const INITIAL_EVENTS: any[] = [
+  {
+    id: "evt-naver-1",
+    title: "기억과 미래 – 인권·평화 시민교육 프로젝트",
+    type: "event",
+    description: "광주시민연대는 2026년 공익활동단체 지원사업으로 “기억과 미래 –시민과 미래세대와 함께하는 인권·평화 시민교육 프로젝트” 를 진행합니다. 경기도 광주시 나눔의 집과 평화의 소녀상을 기반으로, 인권 감수성과 역사 인식을 제고하는 시민교육 프로그램입니다.\n\n○ 사업내용:\n- 시민과 미래세대가 함께하는 인권·평화 시민교육 프로그램 (3회)\n- 수요시위 현장 참관 및 역사 체험학습\n○ 참여문의: 010-2519-0010 (광주시민연대)",
+    status: "active",
+    startDate: "2026-06-20",
+    endDate: "2026-07-31",
+    time: "세부일정 별도안내",
+    location: "광주시민연대 솔빛 배움방 및 역사 현장",
+    imageUrl: "https://postfiles.pstatic.net/MjAyNjA0MTRfMjI3/MDAxNzc2MTM0OTEwNjU2.4pXL_OVwWe-AywiRYJXBJDHgiahWtf6oO-vQx-XrsGEg.V9jPvhq7p-Tdi5JCGSwOSz_E1vmO73rWfXt7mYE6vZIg.PNG/%E2%80%9C%EA%B8%B0%EC%96%B5%EA%B3%BC_%EB%AF%B8%EB%9E%98%E2%80%9C_%EC%8B%9C%EB%AF%BC%EA%B3%BC_%EB%AF%B8%EB%9E%98%EC%84%B8%EB%8C%80%EA%B0%80_%ED%95%A8%EA%BB%98%ED%95%98%EB%8A%94_%EC%9D%B8%EA%B6%8C_%ED%8F%89%ED%99%94_%EC%8B%9C%EB%AF%BC%EA%B5%90%EC%9C%A1_%EC%B5%9C%EC%A2%85.png?type=w773",
+    authorId: "admin",
+    authorName: "관리자",
+    createdAt: "2026-06-18T12:00:00.000Z",
+    updatedAt: "2026-06-18T12:00:00.000Z"
+  },
+  {
+    id: "evt-naver-2",
+    title: "#스벅불매 / 518 역사 왜곡, 폄훼, 조롱하는 스타벅스",
+    type: "campaign",
+    description: "역사를 왜곡하고 진실을 폄훼하며 5·18 정신을 조롱하는 일베 밈(503 텀블러 등)을 이벤트에 차용하여 국민 분열과 조롱을 방치·선동한 스타벅스 불매 행동 캠페인입니다. 역사 기만적 기업 행태를 강력히 규탄하며, 5·18 민주화운동의 불굴의 민주주의 가치를 지키기 위한 행동에 광주 시민 여러분의 동참을 연대합니다.",
+    status: "active",
+    startDate: "2026-06-19",
+    endDate: "2026-09-30",
+    time: "상시 진행",
+    location: "온·오프라인 동시 진행",
+    imageUrl: "https://postfiles.pstatic.net/MjAyNjA1MjBfNDQg/MDAxNzc5MjQ4MDM0NTgy.JDy23V_J6V5AG94R3yKg0ymEgSyvNLcsUxpHVysXW_0g.hCnNUViWC43lr0y2kEz7qMK1OICPxB2fe37LN0yUkOIg.JPEG/K6CQJQjTI3kzcNgPVGcHAn5suh06TFXo.jpg?type=w773",
+    authorId: "admin",
+    authorName: "관리자",
+    createdAt: "2026-06-19T09:00:00.000Z",
+    updatedAt: "2026-06-19T09:00:00.000Z"
+  }
+];
+

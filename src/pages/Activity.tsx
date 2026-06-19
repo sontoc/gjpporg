@@ -7,8 +7,18 @@ import { supabase } from '../lib/supabase';
 import { Post } from '../types';
 
 const ActivityPage: React.FC = () => {
-  const [posts, setPosts] = React.useState<Post[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [posts, setPosts] = React.useState<Post[]>(() => {
+    // Initializer to display local cached items immediately (0 second delay)
+    const localActBackup = storage.getPosts();
+    const mergedAct: Post[] = [];
+    for (const lp of localActBackup) {
+      if (mergedAct.length >= 3) break;
+      mergedAct.push({ ...lp, category: '활동소식' });
+    }
+    return mergedAct;
+  });
+  const [loading, setLoading] = React.useState(false); // False by default so we don't block the user
+  const [isSyncing, setIsSyncing] = React.useState(false); // Background syncing flag
   const settings = storage.getSettings();
   const user = storage.getUser();
   const isAdmin = user?.isAdmin === true || ['sonfrom@gmail.com', 'son3u@daum.net'].includes(user?.email?.toLowerCase() || '');
@@ -17,6 +27,8 @@ const ActivityPage: React.FC = () => {
 
   React.useEffect(() => {
     const loadActivityPosts = async () => {
+      // Run background sync
+      setIsSyncing(true);
       try {
         const { data, error } = await supabase
           .from('community_posts')
@@ -54,15 +66,9 @@ const ActivityPage: React.FC = () => {
         setPosts(mergedAct);
       } catch (err) {
         console.error('Error fetching activity posts:', err);
-        const localActBackup = storage.getPosts();
-        const mergedAct: Post[] = [];
-        for (const lp of localActBackup) {
-          if (mergedAct.length >= 3) break;
-          mergedAct.push({ ...lp, category: '활동소식' });
-        }
-        setPosts(mergedAct);
+        // Fallback is already initialized in state
       } finally {
-        setLoading(false);
+        setIsSyncing(false);
       }
     };
 
@@ -100,7 +106,7 @@ const ActivityPage: React.FC = () => {
           )}
         </header>
 
-        {loading ? (
+        {posts.length === 0 && isSyncing ? (
           <div className="py-24 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-accent" />
             <span className="text-sm font-light">실시간 활동 소식 조회 중...</span>

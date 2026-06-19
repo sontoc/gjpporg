@@ -18,6 +18,7 @@ export default function Header() {
     { name: '단체소개', path: '/about' },
     { name: '공지사항', path: '/notice' },
     { name: '활동소식', path: '/activity' },
+    { name: '행사/캠페인', path: '/campaigns' },
     { name: '언론기사', path: '/news' },
     { name: '영상자료', path: '/videos' },
     { name: '자유게시판', path: '/board' },

@@ -19,14 +19,22 @@ import { Post } from '../types';
 import { DEFAULT_VIDEOS } from '../constants';
 
 const VideoBoard: React.FC = () => {
-  const [videos, setVideos] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [videos, setVideos] = useState<Post[]>(() => {
+    // Initializer to load official/default videos instantly without waiting
+    const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
+    const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
+    const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
+  });
+  const [loading, setLoading] = useState(false); // False by default so elements render with 0 delay
+  const [isSyncing, setIsSyncing] = useState(false); // Background sync status
   const [searchTerm, setSearchTerm] = useState('');
   const user = storage.getUser();
   const isAdmin = user?.isAdmin === true || ['sonfrom@gmail.com', 'son3u@daum.net'].includes(user?.email?.toLowerCase() || '');
 
   useEffect(() => {
     const fetchVideoPosts = async () => {
+      setIsSyncing(true);
       try {
         const { data, error } = await supabase
           .from('community_posts')
@@ -65,13 +73,9 @@ const VideoBoard: React.FC = () => {
         }
       } catch (err) {
         console.error('Error fetching video posts from Supabase:', err);
-        const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
-        const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
-        const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const sorted = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
-        setVideos(sorted);
+        // Fallback is already initialized in useState
       } finally {
-        setLoading(false);
+        setIsSyncing(false);
       }
     };
 
@@ -136,7 +140,7 @@ const VideoBoard: React.FC = () => {
           </div>
         </header>
 
-        {loading ? (
+        {filteredVideos.length === 0 && isSyncing ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <Loader2 className="w-8 h-8 text-accent animate-spin" />
             <p className="text-slate-500 text-sm font-light">영상 자료를 가져옵니다...</p>

@@ -11,6 +11,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import About from './pages/About';
 import Activity from './pages/Activity';
+import Campaigns from './pages/Campaigns';
 import Support from './pages/Support';
 import News from './pages/News';
 import Board from './pages/Board';
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/activity" element={<Activity />} />
+            <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/news" element={<News />} />
             <Route path="/board" element={<Board />} />
             <Route path="/notice" element={<NoticeBoard />} />

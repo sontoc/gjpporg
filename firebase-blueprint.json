@@ -44,6 +44,42 @@
         "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp" }
       },
       "required": ["title", "youtubeUrl", "authorName", "authorId", "createdAt", "updatedAt"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "An event or campaign organized by the coalition",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the event or campaign" },
+        "type": { "type": "string", "enum": ["event", "campaign"], "description": "Type: event or campaign" },
+        "description": { "type": "string", "description": "Detailed description" },
+        "status": { "type": "string", "enum": ["scheduled", "active", "completed"], "description": "Status of event" },
+        "startDate": { "type": "string", "description": "Start date (YYYY-MM-DD)" },
+        "endDate": { "type": "string", "description": "End date (YYYY-MM-DD)" },
+        "time": { "type": "string", "description": "Time description e.g. 14:00 - 16:00" },
+        "location": { "type": "string", "description": "Location details" },
+        "imageUrl": { "type": "string", "description": "Promotion banner image URL" },
+        "authorId": { "type": "string", "description": "Author's Auth UID" },
+        "authorName": { "type": "string", "description": "Author's display name" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last updated timestamp" }
+      },
+      "required": ["title", "type", "description", "status", "startDate", "endDate", "time", "location", "authorId", "authorName", "createdAt", "updatedAt"]
+    },
+    "Rsvp": {
+      "title": "Rsvp",
+      "description": "An RSVP registration for an event",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string", "description": "The target event ID" },
+        "name": { "type": "string", "description": "Full name of the registrant" },
+        "phone": { "type": "string", "description": "Phone number of the registrant" },
+        "email": { "type": "string", "description": "Email address of the registrant" },
+        "message": { "type": "string", "description": "Optional notes or message" },
+        "userId": { "type": "string", "description": "Auth UID of the registrant, if logged in" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of register action" }
+      },
+      "required": ["eventId", "name", "phone", "email", "createdAt"]
     }
   },
   "firestore": {
@@ -58,6 +94,14 @@
     "videos/{videoId}": {
       "schema": "Video",
       "description": "Collection of video resources"
+    },
+    "events/{eventId}": {
+      "schema": "Event",
+      "description": "Collection of events and campaigns"
+    },
+    "events/{eventId}/rsvps/{rsvpId}": {
+      "schema": "Rsvp",
+      "description": "Sub-collection of registrations for a given event"
     }
   }
 }

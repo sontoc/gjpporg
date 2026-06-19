@@ -451,8 +451,12 @@ const NewsPage: React.FC = () => {
     return newsItem.url;
   };
 
-  const [allNews, setAllNews] = React.useState<any[]>(newsItems);
-  const [loading, setLoading] = React.useState(true);
+  const [allNews, setAllNews] = React.useState<any[]>(() => {
+    // Initializer to display sorted static news items with 0 second latency
+    return [...newsItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  });
+  const [loading, setLoading] = React.useState(false); // False by default so page displays instantly
+  const [isSyncing, setIsSyncing] = React.useState(false); // Background syncing tracker
   const [searchTerm, setSearchTerm] = React.useState('');
 
   const filteredNews = allNews.filter((news) => {
@@ -466,6 +470,7 @@ const NewsPage: React.FC = () => {
 
   React.useEffect(() => {
     const fetchNewsPosts = async () => {
+      setIsSyncing(true);
       try {
         const { data, error } = await supabase
           .from('community_posts')
@@ -488,16 +493,14 @@ const NewsPage: React.FC = () => {
           const merged = [...dbNews, ...newsItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
           setAllNews(merged);
         } else {
-          // Sort default list descending by date
           const sorted = [...newsItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
           setAllNews(sorted);
         }
       } catch (err) {
         console.error('Error fetching news posts:', err);
-        const sorted = [...newsItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setAllNews(sorted);
+        // Fail-safe falls back to initial initialized list
       } finally {
-        setLoading(false);
+        setIsSyncing(false);
       }
     };
 
@@ -550,7 +553,7 @@ const NewsPage: React.FC = () => {
         </header>
 
         <div className="space-y-6">
-          {loading ? (
+          {filteredNews.length === 0 && isSyncing ? (
             <div className="py-24 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-accent" />
               <span className="text-sm font-light">최신 언론 보도 수집 중...</span>
