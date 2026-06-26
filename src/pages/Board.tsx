@@ -22,11 +22,12 @@ import {
   serverTimestamp,
   type DocumentData
 } from 'firebase/firestore';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { db, auth, signInWithGoogle } from '../lib/firebase';
+import { onAuthStateChanged, signInAnonymously, type User as FirebaseUser } from 'firebase/auth';
+import { db, auth } from '../lib/firebase';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { storage } from '../services/storage';
 
 interface Post {
   id: string;
@@ -38,6 +39,8 @@ interface Post {
 }
 
 const Board: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -47,8 +50,23 @@ const Board: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      const storedUser = storage.getUser();
+      if (storedUser) {
+        if (!currentUser) {
+          try {
+            const anonUserCredential = await signInAnonymously(auth);
+            setUser(anonUserCredential.user);
+          } catch (err) {
+            console.error("Firebase Anonymous sign-in failed:", err);
+            setUser(null);
+          }
+        } else {
+          setUser(currentUser);
+        }
+      } else {
+        setUser(null);
+      }
     });
 
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
@@ -72,15 +90,25 @@ const Board: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newPost.title || !newPost.content) return;
+    const storedUser = storage.getUser();
+    if (!storedUser || !newPost.title || !newPost.content) return;
 
     setSubmitting(true);
     try {
+      let activeFirebaseUser = auth.currentUser;
+      if (!activeFirebaseUser) {
+        const anonUserCredential = await signInAnonymously(auth);
+        activeFirebaseUser = anonUserCredential.user;
+        setUser(activeFirebaseUser);
+      }
+
+      const authorName = storedUser.name || storedUser.email.split('@')[0] || 'Anonymous';
+
       await addDoc(collection(db, 'posts'), {
         title: newPost.title,
         content: newPost.content,
-        authorName: user.displayName || 'Anonymous',
-        authorId: user.uid,
+        authorName: authorName,
+        authorId: activeFirebaseUser.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -132,7 +160,7 @@ const Board: React.FC = () => {
                 className="bg-slate-900/50 border border-slate-800 rounded-full py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-accent/50 w-full md:w-64"
               />
             </div>
-            {user ? (
+            {storage.getUser() ? (
               <button 
                 onClick={() => setIsModalOpen(true)}
                 className="bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-white px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0 shadow-lg shadow-accent/5 cursor-pointer font-sans"
@@ -142,7 +170,7 @@ const Board: React.FC = () => {
               </button>
             ) : (
               <button 
-                onClick={() => signInWithGoogle()}
+                onClick={() => navigate('/login?tab=signup', { state: { from: location } })}
                 className="bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0 cursor-pointer font-sans"
               >
                 <Lock className="w-3.5 h-3.5 text-slate-500" />

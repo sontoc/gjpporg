@@ -11,7 +11,9 @@ import {
   CheckCircle2, 
   AlertCircle,
   HelpCircle,
-  Smartphone
+  Smartphone,
+  User,
+  MessageSquare
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -29,11 +31,22 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [greetings, setGreetings] = useState('');
   
   // Loading & statuses
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [signupSuccess, setSignupSuccess] = useState(false);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam === 'signup' || tabParam === 'register') {
+      setActiveTab('signup');
+    }
+  }, [location.search]);
 
   const from = (location.state as any)?.from?.pathname || '/';
 
@@ -83,6 +96,12 @@ export default function Login() {
     setErrorMsg(null);
     setSignupSuccess(false);
 
+    if (!name.trim()) {
+      setErrorMsg('이름을 입력해 주세요.');
+      setIsLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setErrorMsg('비밀번호가 일치하지 않습니다.');
       setIsLoading(false);
@@ -90,11 +109,17 @@ export default function Login() {
     }
 
     try {
+      // 1. Try registration in Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: window.location.origin + '/login',
+          data: {
+            display_name: name.trim(),
+            phone: phone.trim(),
+            greetings: greetings.trim()
+          }
         }
       });
 
@@ -102,8 +127,17 @@ export default function Login() {
         throw error;
       }
 
-      // Check if user identity is created either immediately or requires email confirmation
+      // 2. Perform direct website registration local login so they can write posts immediately!
+      storage.login(email, name.trim());
+
       setSignupSuccess(true);
+
+      // Auto-redirect to the Board page or previous page after a brief moment
+      setTimeout(() => {
+        navigate(from === '/login' ? '/board' : from, { replace: true });
+        window.location.reload();
+      }, 1500);
+
     } catch (err: any) {
       console.error('Supabase SignUp Error:', err);
       if (err.message?.includes('already registered')) {
@@ -246,8 +280,36 @@ export default function Login() {
           {/* Form Content */}
           <form onSubmit={activeTab === 'login' ? handleLogin : handleSignUp} className="space-y-4">
             
+            {activeTab === 'signup' && (
+              <div className="space-y-1 bg-accent/5 p-3 rounded-2xl border border-accent/10 mb-4">
+                <span className="text-[11px] font-semibold text-accent uppercase tracking-wider block mb-0.5">홈페이지 간편 회원가입</span>
+                <p className="text-[10.5px] text-slate-400 font-light leading-relaxed">
+                  광주시민연대 시민광장에 오신 것을 환영합니다! 가입 완료 즉시 로그인되어 글쓰기가 가능해집니다.
+                </p>
+              </div>
+            )}
+
+            {activeTab === 'signup' && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-400">이름 / 활동명 <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3.5 text-slate-500">
+                    <User className="w-4 h-4" />
+                  </span>
+                  <input
+                    required={activeTab === 'signup'}
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="홍길동 (실명 또는 활동명)"
+                    className="w-full bg-[#161616] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-light"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-400">이메일 주소</label>
+              <label className="text-xs font-medium text-slate-400">이메일 주소 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <span className="absolute left-3 top-3.5 text-slate-500">
                   <Mail className="w-4 h-4" />
@@ -264,7 +326,7 @@ export default function Login() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-400 font-light">비밀번호</label>
+              <label className="text-xs font-medium text-slate-400 font-light">비밀번호 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <span className="absolute left-3 top-3.5 text-slate-500">
                   <Lock className="w-4 h-4" />
@@ -281,22 +343,56 @@ export default function Login() {
             </div>
 
             {activeTab === 'signup' && (
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-400 font-light">비밀번호 확인</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-3.5 text-slate-500">
-                    <Lock className="w-4 h-4" />
-                  </span>
-                  <input
-                    required
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="비밀번호 동일하게 재입력"
-                    className="w-full bg-[#161616] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-light"
-                  />
+              <>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-400 font-light">비밀번호 확인 <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-3.5 text-slate-500">
+                      <Lock className="w-4 h-4" />
+                    </span>
+                    <input
+                      required
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="비밀번호 동일하게 재입력"
+                      className="w-full bg-[#161616] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-light"
+                    />
+                  </div>
                 </div>
-              </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-400 font-light font-sans">연락처 <span className="text-slate-600 text-[10px]">(선택)</span></label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-3.5 text-slate-500">
+                      <Smartphone className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="010-1234-5678"
+                      className="w-full bg-[#161616] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-light"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-400 font-light">가입 인사 / 가입 목적 <span className="text-slate-600 text-[10px]">(선택)</span></label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-3.5 text-slate-500">
+                      <MessageSquare className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="text"
+                      value={greetings}
+                      onChange={(e) => setGreetings(e.target.value)}
+                      placeholder="예) 경기도 광주의 자치와 연대를 위해 동참합니다."
+                      className="w-full bg-[#161616] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none focus:border-accent font-light"
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             <button
@@ -317,7 +413,7 @@ export default function Login() {
               ) : (
                 <>
                   <UserPlus className="w-4 h-4" />
-                  이메일로 가입 신청
+                  시민광장 회원가입 완료 (자동 로그인)
                 </>
               )}
             </button>

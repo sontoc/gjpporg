@@ -45,10 +45,10 @@ export const storage = {
     const posts = storage.getPosts().filter(p => p.id !== id);
     localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
   },
-  login: (email: string) => {
+  login: (email: string, name?: string) => {
     const adminEmails = ['sonfrom@gmail.com', 'son3u@daum.net'];
     const isAdmin = adminEmails.includes(email.trim().toLowerCase());
-    localStorage.setItem(AUTH_KEY, JSON.stringify({ email, isAdmin }));
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ email, isAdmin, name: name || email.split('@')[0] }));
     return true;
   },
   logout: () => {

@@ -187,12 +187,21 @@ using (true);
       title: '정기후원 회원가입',
       icon: <Users className="w-6 h-6" />,
       desc: '의결권을 가진 정회원으로 참여하여 매월 정기적인 후원으로 단체의 운영과 활동을 든든하게 지켜주세요.',
+      type: 'regular',
       link: settings.donationUrl
+    },
+    {
+      title: '홈페이지 회원가입',
+      icon: <MessageCircle className="w-6 h-6" />,
+      desc: '시민광장 자유게시판에 의견을 남기고 소통할 수 있는 홈페이지 회원으로 가입합니다. 가입 즉시 자유롭게 글쓰기가 가능합니다.',
+      type: 'homepage',
+      link: '/login?tab=signup'
     },
     {
       title: '일시후원',
       icon: <Wallet className="w-6 h-6" />,
       desc: '특별한 날, 의미 있는 나눔을 통해 광주시민연대의 활동과 변화에 소중한 힘을 보태주세요.',
+      type: 'donation',
       bankInfo: '농협 317-0026-0245-11 광주참여자치시민연대',
       link: null
     }
@@ -261,7 +270,7 @@ using (true);
               className="space-y-12"
             >
               {/* Support Type Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                 {supportTypes.map((type, idx) => (
                   <div
                     key={type.title}
@@ -275,13 +284,20 @@ using (true);
                       {type.desc}
                     </p>
                     
-                    {type.link ? (
+                    {type.type === 'regular' ? (
                       <button 
                         onClick={() => setActiveTab('form')}
                         className="w-full h-14 bg-accent text-white rounded-lg font-bold text-xs sm:text-sm hover:brightness-110 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
                       >
                         간편 온라인 가입하기 <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
                       </button>
+                    ) : type.type === 'homepage' ? (
+                      <Link 
+                        to="/login?tab=signup"
+                        className="w-full h-14 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-white rounded-lg font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shrink-0 text-center"
+                      >
+                        시민광장 회원가입 <ExternalLink className="w-4 h-4 text-accent" />
+                      </Link>
                     ) : (
                       <div 
                         onClick={handleCopyBank}
