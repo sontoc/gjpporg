@@ -67,7 +67,7 @@ export default function App() {
   return (
     <Router>
       <ScrollToTop />
-      <div className="min-h-screen flex flex-col font-sans">
+      <div className="min-h-screen flex flex-col font-sans overflow-x-hidden">
         <Header />
         <main className="flex-1">
           <Routes>

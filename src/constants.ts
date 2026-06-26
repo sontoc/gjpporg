@@ -1,7 +1,7 @@
 import { Post, SiteSettings } from "./types";
 
 export const INITIAL_SETTINGS: SiteSettings = {
-  name: "광주시민연대(광주참여자치시민연대)",
+  name: "광주참여자치시민연대(광주시민연대)",
   description: "시민의 참여로 경기도 광주시의 권력을 감시하고 참 자치, 평화와 인권의 가치를 실현하며, 건강하고 따뜻한 상생 자치공동체를 만드는 경기도 광주시민의 광장입니다.",
   accentColor: "#A855F7", // Purple-500
   homepageHeroTitle: "시민의 참여로\n시민의 연대로\n시민의 힘으로",

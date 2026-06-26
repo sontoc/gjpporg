@@ -200,7 +200,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="bg-[#0A0A0A] text-slate-200 pt-16">
+    <div className="bg-[#0A0A0A] text-slate-200 pt-16 overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative h-[90vh] flex items-center overflow-hidden px-4">
         <div className="absolute inset-0 z-0">
@@ -236,7 +236,7 @@ export default function Home() {
             className="flex flex-wrap gap-4"
           >
             <Link 
-              to="/activity"
+              to="/support"
               id="hero-btn-activity"
               className="px-8 py-3.5 bg-accent text-white rounded font-bold hover:brightness-110 transition-all flex items-center gap-2 group text-sm shadow-xl shadow-accent/20"
             >
@@ -263,7 +263,7 @@ export default function Home() {
       <section id="activity-section" className="py-24 px-6 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div className="space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">최근 활동 소식</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white">최근 활동 소식</h2>
             <p className="text-slate-500">{settings.name}의 생생한 현장 소식을 전합니다.</p>
           </div>
           <Link 
@@ -329,10 +329,10 @@ export default function Home() {
       </section>
 
       {/* Values/Mission */}
-      <section className="bg-[#0F0F0F] border-y border-slate-800 py-24">
+      <section className="bg-[#0F0F0F] border-y border-slate-800 py-24 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-20 items-center">
           <div className="space-y-12">
-            <h2 className="text-4xl md:text-5xl font-bold leading-[1.1] tracking-tighter text-white">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold leading-[1.1] tracking-tighter text-white">
               우리가 지키고자 하는<br /><span className="text-accent">참여의 가치</span>
             </h2>
             <div className="space-y-10">
@@ -364,7 +364,7 @@ export default function Home() {
                 referrerPolicy="no-referrer"
               />
             </div>
-            <div className="absolute top-10 -right-10 bg-[#141414] border border-slate-800 p-8 rounded shadow-2xl space-y-2 max-w-[240px]">
+            <div className="absolute top-10 right-4 lg:-right-10 bg-[#141414]/90 backdrop-blur-md border border-slate-800 p-8 rounded shadow-2xl space-y-2 max-w-[200px] sm:max-w-[240px]">
               <p className="text-3xl font-bold text-white tracking-tighter">100+</p>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Activists</p>
               <p className="text-xs font-light text-slate-400 leading-relaxed">회원들과 활동가들이 함께 민주주의를 지키고 있습니다.</p>
@@ -382,7 +382,7 @@ export default function Home() {
                 <div className="w-8 h-[1px] bg-accent" />
                 <span className="text-accent text-[10px] font-bold uppercase tracking-[0.3em]">Press Coverage</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">언론에 비친 <span className="text-slate-400 font-light">시민연대</span></h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white">언론에 비친 <span className="text-slate-400 font-light">시민연대</span></h2>
               <p className="text-slate-500 font-light">주요 언론 보도를 통해 보는 광주참여자치의 발자취입니다.</p>
             </div>
             <Link 
@@ -430,7 +430,7 @@ export default function Home() {
                 <div className="w-8 h-[1px] bg-accent" />
                 <span className="text-accent text-[10px] font-bold uppercase tracking-[0.3em]">Archive</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">활동 <span className="text-slate-400 font-light">영상자료</span></h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white">활동 <span className="text-slate-400 font-light">영상자료</span></h2>
               <p className="text-slate-500 font-light">현장의 생생한 목소리와 활동을 영상으로 만나보세요.</p>
             </div>
             <Link 
@@ -530,7 +530,7 @@ export default function Home() {
                 <div className="w-8 h-[1px] bg-accent" />
                 <span className="text-accent text-[10px] font-bold uppercase tracking-[0.3em]">Community</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">시민 <span className="text-slate-400 font-light">자유게시판</span></h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white">시민 <span className="text-slate-400 font-light">자유게시판</span></h2>
               <p className="text-slate-500 font-light">시민 여러분의 소중한 목소리를 기다립니다.</p>
             </div>
             <Link 
@@ -589,7 +589,7 @@ export default function Home() {
                 </div>
                 <h4 className="text-white font-bold">참여와 소통의 광장</h4>
                 <p className="text-slate-400 text-xs font-light leading-relaxed max-w-xs mx-auto">
-                  광주시민연대 회원 및 일반 시민 누구나 회원 가입 후 자유롭게 의견을 보태고 지역 소식을 나눌 수 있습니다.
+                  광주참여자치시민연대 회원 및 일반 시민 누구나 회원 가입 후 자유롭게 의견을 보태고 지역 소식을 나눌 수 있습니다.
                 </p>
               </div>
               <div className="w-full space-y-3">
@@ -610,7 +610,7 @@ export default function Home() {
 
       {/* CTA */}
       <section className="py-24 px-6 text-center max-w-4xl mx-auto">
-        <h2 className="text-3xl md:text-5xl font-bold mb-8 text-white tracking-tight">변화를 만드는 용기, <br />당신의 참여로부터 시작됩니다.</h2>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 text-white tracking-tight leading-tight">변화를 만드는 용기, <br />당신의 참여로부터 시작됩니다.</h2>
         <p className="text-lg text-slate-400 mb-12 font-light">지금 {settings.name}의 회원이 되어 정의롭고 투명한 광주를 함께 만들어가세요.</p>
         <button 
           onClick={() => settings.donationUrl && window.open(settings.donationUrl, '_blank')}

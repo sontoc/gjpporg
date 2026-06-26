@@ -18,7 +18,7 @@ export default function Header() {
     { name: '단체소개', path: '/about' },
     { name: '공지사항', path: '/notice' },
     { name: '활동소식', path: '/activity' },
-    { name: '행사/캠페인', path: '/campaigns' },
+    { name: '캠페인', path: '/campaigns' },
     { name: '언론기사', path: '/news' },
     { name: '영상자료', path: '/videos' },
     { name: '자유게시판', path: '/board' },
@@ -33,8 +33,8 @@ export default function Header() {
           <span className={cn(
             "flex flex-col justify-center items-start transition-opacity group-hover:opacity-80 gap-1"
           )}>
-            <span className="text-xs sm:text-sm font-black tracking-[0.2em] text-white leading-none mr-[-0.2em]">광주시민연대</span>
-            <span className="text-slate-400 text-[8px] sm:text-[9.5px] font-light tracking-tight leading-none -ml-[2px]">{`(광주참여자치시민연대)`}</span>
+            <span className="text-xs sm:text-sm font-black tracking-[0.1em] text-white leading-none">광주참여자치시민연대</span>
+            <span className="text-slate-300 text-[10px] sm:text-xs font-semibold tracking-wider leading-none mt-0.5">{`(광주시민연대)`}</span>
           </span>
         </Link>
 
@@ -87,7 +87,7 @@ export default function Header() {
               className="px-4 py-1.5 rounded-lg bg-accent/10 border border-accent/30 hover:bg-accent-dark hover:bg-accent/20 text-accent text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0"
             >
               <LogIn className="w-3.5 h-3.5" />
-              로그인 / 회원가입
+              로그인
             </Link>
           )}
         </nav>
@@ -155,7 +155,7 @@ export default function Header() {
               onClick={() => setIsOpen(false)}
               className="text-lg font-medium text-accent"
             >
-              로그인 / 회원가입
+              로그인
             </Link>
           )}
         </motion.div>

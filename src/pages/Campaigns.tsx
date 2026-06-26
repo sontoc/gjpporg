@@ -52,11 +52,11 @@ export default function Campaigns() {
 
   // Load SEO headers & fetch raw items
   React.useEffect(() => {
-    document.title = `행사 및 캠페인 | ${settings.name}`;
+    document.title = `캠페인 | ${settings.name}`;
     
     let metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute('content', `${settings.name}에서 기획하는 실시간 참여 캠페인 및 공익 행사 정보 목록입니다. 시민의 손으로 행동주의를 이끕니다.`);
+      metaDesc.setAttribute('content', `${settings.name}에서 기획하는 실시간 참여 캠페인 정보 목록입니다. 시민의 손으로 행동주의를 이끕니다.`);
     }
 
     const loadEvents = async () => {
@@ -214,7 +214,7 @@ export default function Campaigns() {
             <span className="text-xs uppercase tracking-widest text-accent font-bold font-mono">Participatory Action</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-none">
-            행사 및 캠페인 <span className="text-accent">참여관</span>
+            시민 참여 <span className="text-accent">캠페인</span>
           </h1>
           <p className="text-slate-400 text-base md:text-lg font-light leading-relaxed max-w-3xl">
             {settings.name}이 이끄는 행동 중심의 캠페인과 온·오프라인 시민 참여 소통 광장입니다. 
