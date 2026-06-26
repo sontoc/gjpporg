@@ -14,11 +14,38 @@ import { ko } from 'date-fns/locale';
 
 export default function Home() {
   const settings = storage.getSettings();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [news, setNews] = useState<any[]>([]);
-  const [homeVideos, setHomeVideos] = useState<Post[]>(DEFAULT_VIDEOS.slice(0, 3));
+
+  // Helper to load activities from local backup immediately
+  const getInitialPosts = (): Post[] => {
+    const localActBackup = storage.getPosts();
+    const list: Post[] = [];
+    for (const lp of localActBackup) {
+      if (list.length >= 3) break;
+      list.push({ ...lp, category: '활동소식' });
+    }
+    return list;
+  };
+
+  // Helper to load news from local static items immediately
+  const getInitialNews = (): any[] => {
+    return [...newsItems]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 4);
+  };
+
+  // Helper to load videos from local defaults immediately
+  const getInitialVideos = (): Post[] => {
+    const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
+    const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
+    const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return (channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers).slice(0, 3);
+  };
+
+  const [posts, setPosts] = useState<Post[]>(getInitialPosts());
+  const [news, setNews] = useState<any[]>(getInitialNews());
+  const [homeVideos, setHomeVideos] = useState<Post[]>(getInitialVideos());
   const [boardPosts, setBoardPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Set to false so local static/cached data is shown immediately without delay or spinner
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   const getYoutubeId = (url: string) => {
@@ -37,9 +64,9 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const loadHomeData = async () => {
+    // 1. Fetch activities concurrently
+    const fetchActivities = async () => {
       try {
-        // 1. Fetch activities
         const { data: actData, error: actErr } = await supabase
           .from('community_posts')
           .select('*')
@@ -49,9 +76,8 @@ export default function Home() {
 
         if (actErr) throw actErr;
 
-        let dbMapped: Post[] = [];
         if (actData && actData.length > 0) {
-          dbMapped = actData.map((p: any) => ({
+          const dbMapped = actData.map((p: any) => ({
             id: p.id,
             title: p.title || '',
             content: p.content || '',
@@ -62,29 +88,36 @@ export default function Home() {
             imageUrl: p.image_url || undefined,
             url: p.post_url || undefined
           }));
-        }
 
-        const localActBackup = storage.getPosts();
-        const mergedAct: Post[] = [...dbMapped];
-        for (const lp of localActBackup) {
-          if (mergedAct.length >= 3) break;
-          const isDup = mergedAct.some(m => m.title === lp.title || m.id === lp.id);
-          if (!isDup) {
-            mergedAct.push({ ...lp, category: '활동소식' });
+          const localActBackup = storage.getPosts();
+          const mergedAct: Post[] = [...dbMapped];
+          for (const lp of localActBackup) {
+            if (mergedAct.length >= 3) break;
+            const isDup = mergedAct.some(m => m.title === lp.title || m.id === lp.id);
+            if (!isDup) {
+              mergedAct.push({ ...lp, category: '활동소식' });
+            }
           }
+          setPosts(mergedAct);
         }
-        setPosts(mergedAct);
+      } catch (err) {
+        console.warn('[Home] Note: Activities fetched from local fallback. Supabase connection bypassed:', err);
+      }
+    };
 
-        // 2. Fetch news
+    // 2. Fetch news concurrently
+    const fetchNews = async () => {
+      try {
         const { data: newsData, error: newsErr } = await supabase
           .from('community_posts')
           .select('*')
           .eq('category', 'news')
           .order('id', { ascending: false });
 
-        let dbNewsMapped: any[] = [];
+        if (newsErr) throw newsErr;
+
         if (newsData && newsData.length > 0) {
-          dbNewsMapped = newsData.map((p: any) => ({
+          const dbNewsMapped = newsData.map((p: any) => ({
             id: p.id,
             title: p.title || '',
             source: p.source || '참여자치연대',
@@ -92,119 +125,78 @@ export default function Home() {
             url: p.post_url || '#',
             excerpt: p.excerpt || p.content || ''
           }));
+
+          const mergedNews = [...dbNewsMapped, ...newsItems]
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 4);
+          setNews(mergedNews);
         }
-
-        const mergedNews = [...dbNewsMapped, ...newsItems]
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-          .slice(0, 4);
-        setNews(mergedNews);
-
-        // 3. Fetch videos
-        try {
-          const { data: videoData, error: videoErr } = await supabase
-            .from('community_posts')
-            .select('*')
-            .eq('category', 'video')
-            .order('id', { ascending: false });
-
-          const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
-          const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
-
-          if (videoData && videoData.length > 0) {
-            const mappedVideos = videoData.map((p: any) => ({
-              id: p.id,
-              title: p.title || '',
-              content: p.content || '',
-              excerpt: p.excerpt || '',
-              category: 'video',
-              date: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-              author: p.author || '관리자',
-              imageUrl: p.image_url || undefined,
-              youtubeUrl: p.youtube_url || p.post_url || ''
-            }));
-
-            const dbVideos = mappedVideos.filter(v => v.id !== "v-channel");
-            const sortedOthers = [...dbVideos, ...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            const merged = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
-            setHomeVideos(merged.slice(0, 3));
-          } else {
-            const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            const sorted = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
-            setHomeVideos(sorted.slice(0, 3));
-          }
-        } catch (vErr) {
-          console.error('Error fetching videos in Home:', vErr);
-          const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
-          const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
-          const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-          const sorted = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
-          setHomeVideos(sorted.slice(0, 3));
-        }
-
-        // 4. Fetch board posts from Firebase
-        try {
-          const boardQuery = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(5));
-          const boardSnapshot = await getDocs(boardQuery);
-          const fetchedBoardPosts = boardSnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              title: data.title || '',
-              content: data.content || '',
-              authorName: data.authorName || '익명',
-              createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
-            };
-          });
-          setBoardPosts(fetchedBoardPosts);
-        } catch (boardError) {
-          console.error("Error fetching board posts in Home:", boardError);
-        }
-
       } catch (err) {
-        console.error('Error fetching home data:', err);
-        const localActBackup = storage.getPosts();
-        const mergedAct: Post[] = [];
-        for (const lp of localActBackup) {
-          if (mergedAct.length >= 3) break;
-          mergedAct.push({ ...lp, category: '활동소식' });
-        }
-        setPosts(mergedAct);
-        
-        const sortedStaticNews = [...newsItems]
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-          .slice(0, 4);
-        setNews(sortedStaticNews);
-
-        const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
-        const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
-        const sortedOthers = [...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const sorted = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
-        setHomeVideos(sorted.slice(0, 3));
-
-        // Fallback fetch
-        try {
-          const boardQuery = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(5));
-          const boardSnapshot = await getDocs(boardQuery);
-          const fetchedBoardPosts = boardSnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              title: data.title || '',
-              content: data.content || '',
-              authorName: data.authorName || '익명',
-              createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
-            };
-          });
-          setBoardPosts(fetchedBoardPosts);
-        } catch (bErr) {
-          console.error("Error fetching board posts fallback:", bErr);
-        }
-      } finally {
-        setLoading(false);
+        console.warn('[Home] Note: News fetched from local fallback. Supabase connection bypassed:', err);
       }
     };
 
-    loadHomeData();
+    // 3. Fetch videos concurrently
+    const fetchVideos = async () => {
+      try {
+        const { data: videoData, error: videoErr } = await supabase
+          .from('community_posts')
+          .select('*')
+          .eq('category', 'video')
+          .order('id', { ascending: false });
+
+        const channelVideo = DEFAULT_VIDEOS.find(v => v.id === "v-channel");
+        const otherDefaultVideos = DEFAULT_VIDEOS.filter(v => v.id !== "v-channel");
+
+        if (videoData && videoData.length > 0) {
+          const mappedVideos = videoData.map((p: any) => ({
+            id: p.id,
+            title: p.title || '',
+            content: p.content || '',
+            excerpt: p.excerpt || '',
+            category: 'video',
+            date: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            author: p.author || '관리자',
+            imageUrl: p.image_url || undefined,
+            youtubeUrl: p.youtube_url || p.post_url || ''
+          }));
+
+          const dbVideos = mappedVideos.filter(v => v.id !== "v-channel");
+          const sortedOthers = [...dbVideos, ...otherDefaultVideos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          const merged = channelVideo ? [channelVideo, ...sortedOthers] : sortedOthers;
+          setHomeVideos(merged.slice(0, 3));
+        }
+      } catch (vErr) {
+        console.warn('[Home] Note: Videos fetched from local fallback. Supabase connection bypassed:', vErr);
+      }
+    };
+
+    // 4. Fetch board posts concurrently
+    const fetchBoardPosts = async () => {
+      try {
+        const boardQuery = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(5));
+        const boardSnapshot = await getDocs(boardQuery);
+        const fetchedBoardPosts = boardSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title || '',
+            content: data.content || '',
+            authorName: data.authorName || '익명',
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+          };
+        });
+        setBoardPosts(fetchedBoardPosts);
+      } catch (boardError) {
+        console.warn("[Home] Note: Board posts fetched from local fallback. Firebase connection bypassed:", boardError);
+      }
+    };
+
+    // Load everything concurrently without blocking
+    fetchActivities();
+    fetchNews();
+    fetchVideos();
+    fetchBoardPosts();
   }, []);
 
   return (

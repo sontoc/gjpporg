@@ -65,7 +65,7 @@ const ActivityPage: React.FC = () => {
         }
         setPosts(mergedAct);
       } catch (err) {
-        console.error('Error fetching activity posts:', err);
+        console.warn('[Activity] Note: Activities fetched from local fallback. Supabase connection bypassed:', err);
         // Fallback is already initialized in state
       } finally {
         setIsSyncing(false);

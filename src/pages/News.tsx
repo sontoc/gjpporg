@@ -497,7 +497,7 @@ const NewsPage: React.FC = () => {
           setAllNews(sorted);
         }
       } catch (err) {
-        console.error('Error fetching news posts:', err);
+        console.warn('[News] Note: News fetched from local fallback. Supabase connection bypassed:', err);
         // Fail-safe falls back to initial initialized list
       } finally {
         setIsSyncing(false);

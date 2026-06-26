@@ -90,7 +90,7 @@ const AboutPage: React.FC = () => {
         </div>
 
         {/* Dynamic Abbreviation notice - Beautifully styled with subtle indicator */}
-        <div className="text-slate-400 text-xs sm:text-sm px-2 mb-8 font-light flex items-center gap-2 animate-fade-in">
+        <div className="text-slate-400 text-xs sm:text-sm px-2 mb-8 font-light flex items-center justify-center gap-2 animate-fade-in text-center">
           <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse shrink-0" />
           <span>광주참여자치시민연대는 약칭으로 <strong className="text-accent font-semibold">[광주시민연대]</strong>를 사용합니다.</span>
         </div>
