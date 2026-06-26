@@ -31,10 +31,9 @@ export default function Header() {
         <Link to="/" className="flex items-center gap-2 group flex-nowrap shrink-0">
           <div className="px-2.5 h-8 bg-accent rounded-lg flex items-center justify-center font-bold text-white group-hover:scale-110 group-hover:rotate-3 transition-all text-xs shadow-lg shadow-accent/20 tracking-wider whitespace-nowrap shrink-0 select-none">ㅅㅅㅅ</div>
           <span className={cn(
-            "flex flex-col justify-center items-start transition-opacity group-hover:opacity-80 gap-1"
+            "flex flex-col justify-center items-start transition-opacity group-hover:opacity-80"
           )}>
             <span className="text-xs sm:text-sm font-black tracking-[0.1em] text-white leading-none">광주참여자치시민연대</span>
-            <span className="text-slate-300 text-[10px] sm:text-xs font-semibold tracking-wider leading-none mt-0.5">{`(광주시민연대)`}</span>
           </span>
         </Link>
 
