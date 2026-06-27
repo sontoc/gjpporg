@@ -30,6 +30,31 @@ const SupportPage: React.FC = () => {
     setTimeout(() => setCopiedBank(false), 2000);
   };
 
+  const scrollToCard = (typeId: string) => {
+    if (activeTab !== 'info') {
+      setActiveTab('info');
+      setTimeout(() => {
+        const element = document.getElementById(`card-${typeId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('ring-2', 'ring-accent/50', 'transition-all');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-accent/50');
+          }, 2000);
+        }
+      }, 100);
+    } else {
+      const element = document.getElementById(`card-${typeId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.classList.add('ring-2', 'ring-accent/50', 'transition-all');
+        setTimeout(() => {
+          element.classList.remove('ring-2', 'ring-accent/50');
+        }, 2000);
+      }
+    }
+  };
+
   // Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -184,13 +209,6 @@ using (true);
 
   const supportTypes = [
     {
-      title: '정기후원 회원가입',
-      icon: <Users className="w-6 h-6" />,
-      desc: '의결권을 가진 정회원으로 참여하여 매월 정기적인 후원으로 단체의 운영과 활동을 든든하게 지켜주세요.',
-      type: 'regular',
-      link: settings.donationUrl
-    },
-    {
       title: '홈페이지 회원가입',
       icon: <MessageCircle className="w-6 h-6" />,
       desc: '시민광장 자유게시판에 의견을 남기고 소통할 수 있는 홈페이지 회원으로 가입합니다. 가입 즉시 자유롭게 글쓰기가 가능합니다.',
@@ -198,7 +216,14 @@ using (true);
       link: '/login?tab=signup'
     },
     {
-      title: '일시후원',
+      title: '정기후원 회원가입',
+      icon: <Users className="w-6 h-6" />,
+      desc: '의결권을 가진 정회원으로 참여하여 매월 정기적인 후원으로 단체의 운영과 활동을 든든하게 지켜주세요.',
+      type: 'regular',
+      link: settings.donationUrl
+    },
+    {
+      title: '일시후원 계좌안내',
       icon: <Wallet className="w-6 h-6" />,
       desc: '특별한 날, 의미 있는 나눔을 통해 광주시민연대의 활동과 변화에 소중한 힘을 보태주세요.',
       type: 'donation',
@@ -225,38 +250,34 @@ using (true);
             <Heart className="w-8 h-8 fill-current animate-pulse text-accent" />
           </motion.div>
           <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-4">회원가입 및 후원</h1>
-          <p className="text-slate-400 text-base md:text-lg font-light leading-relaxed max-w-xl mx-auto">
-            정부 보조금 없이 오직 시민의 후원으로만 투명하게 운영됩니다.<br />
-            정의롭고 따뜻한 광주 공동체를 위한 소중한 첫걸음이 되어 주세요.
+          <p className="text-slate-400 text-base md:text-lg font-light leading-relaxed max-w-2xl mx-auto">
+            광주시민연대는 정부 보조금 없이 오직 시민의 후원으로만 투명하게 운영됩니다.<br />
+            정의롭고 따뜻한 광주 공동체를 위한 소중한 동반자가 되어 주세요.
           </p>
-        </header>
-
-        {/* Tab Toggle Navigation */}
-        <div className="flex justify-center mb-10">
-          <div className="p-1 bg-[#141414] border border-slate-800 rounded-xl flex gap-1">
+          <div className="mt-8 flex items-center justify-center gap-3.5 flex-wrap">
             <button
-              onClick={() => setActiveTab('info')}
-              className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                activeTab === 'info' 
-                  ? 'bg-accent text-white shadow-lg shadow-accent/20' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={() => scrollToCard('homepage')}
+              className="cursor-pointer px-5 py-3 bg-purple-500/10 border border-purple-500/30 hover:border-purple-400 text-purple-400 hover:text-purple-300 hover:bg-purple-500/20 rounded-2xl text-sm font-bold tracking-wide shadow-md shadow-purple-500/5 transition-all flex items-center gap-2"
             >
-              후원 안내 및 계좌
+              <MessageCircle className="w-4 h-4 text-purple-400" />
+              홈페이지 회원가입
             </button>
             <button
-              onClick={() => setActiveTab('form')}
-              className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-                activeTab === 'form' 
-                  ? 'bg-accent text-white shadow-lg shadow-accent/20' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={() => scrollToCard('regular')}
+              className="cursor-pointer px-5 py-3 bg-purple-500/10 border border-purple-500/30 hover:border-purple-400 text-purple-400 hover:text-purple-300 hover:bg-purple-500/20 rounded-2xl text-sm font-bold tracking-wide shadow-md shadow-purple-500/5 transition-all flex items-center gap-2"
             >
-              <Sparkles className="w-4 h-4 text-amber-400 animate-spin-slow" />
-              온라인 가입 신청서
+              <Users className="w-4 h-4 text-purple-400" />
+              정기후원 회원가입
+            </button>
+            <button
+              onClick={() => scrollToCard('donation')}
+              className="cursor-pointer px-5 py-3 bg-purple-500/10 border border-purple-500/30 hover:border-purple-400 text-purple-400 hover:text-purple-300 hover:bg-purple-500/20 rounded-2xl text-sm font-bold tracking-wide shadow-md shadow-purple-500/5 transition-all flex items-center gap-2"
+            >
+              <Wallet className="w-4 h-4 text-purple-400" />
+              일시후원 계좌안내
             </button>
           </div>
-        </div>
+        </header>
 
         {/* Main Tabs Area */}
         <AnimatePresence mode="wait">
@@ -274,7 +295,8 @@ using (true);
                 {supportTypes.map((type, idx) => (
                   <div
                     key={type.title}
-                    className="bg-[#141414] border border-slate-800 p-8 rounded-3xl hover:border-accent/40 transition-colors group flex flex-col shadow-xl"
+                    id={`card-${type.type}`}
+                    className="bg-[#141414] border border-slate-800 p-8 rounded-3xl hover:border-accent/40 transition-all group flex flex-col items-center text-center shadow-xl scroll-mt-28"
                   >
                     <div className="w-12 h-12 bg-slate-800/80 rounded-xl flex items-center justify-center text-accent mb-6 group-hover:scale-110 transition-transform">
                       {type.icon}
@@ -301,7 +323,7 @@ using (true);
                     ) : (
                       <div 
                         onClick={handleCopyBank}
-                        className="w-full h-14 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-slate-600 text-white rounded-lg flex flex-col items-center justify-center transition-all px-2 cursor-pointer select-none shrink-0"
+                        className="w-full h-14 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-slate-600 text-white rounded-lg flex flex-col items-center justify-center transition-all px-5 cursor-pointer select-none shrink-0"
                         title="클릭 시 계좌번호 복사"
                       >
                         {copiedBank ? (
